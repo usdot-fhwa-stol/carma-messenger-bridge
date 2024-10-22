@@ -99,8 +99,57 @@ bool MosaicClient::send_registration_message(const std::shared_ptr<std::vector<u
 // }
 
 void MosaicClient::received_vehicle_status(const std::shared_ptr<const std::vector<uint8_t>>& data) {
-    RCLCPP_DEBUG(rclcpp::get_logger("MosaicClient"), "Received vehicle status data");
-    // onVehStatusReceived();
+
+    std::string json_string(data->begin(), data->end());
+
+    rapidjson::Document received_json;
+    if (received_json.Parse(json_string.c_str()).HasParseError()) {
+        RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Failed to parse JSON: %s", json_string.c_str());
+        return;
+    }
+
+    std::array<double, 3> pose = {0.0, 0.0, 0.0};
+    std::array<double, 3> twist = {0.0, 0.0, 0.0};
+
+    if (received_json.HasMember("vehicle_pose") && received_json["vehicle_pose"].IsObject()) {
+        const auto& vehicle_pose = received_json["vehicle_pose"];
+        if (vehicle_pose.HasMember("x") && vehicle_pose["x"].IsNumber() &&
+            vehicle_pose.HasMember("y") && vehicle_pose["y"].IsNumber() &&
+            vehicle_pose.HasMember("z") && vehicle_pose["z"].IsNumber()) {
+            pose[0] = vehicle_pose["x"].GetDouble();
+            pose[1] = vehicle_pose["y"].GetDouble();
+            pose[2] = vehicle_pose["z"].GetDouble();
+        } else {
+            RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Invalid or missing fields in 'vehicle_pose'");
+        }
+    } else {
+        RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Missing 'vehicle_pose' in JSON");
+    }
+
+    if (received_json.HasMember("vehicle_twist") && received_json["vehicle_twist"].IsObject()) {
+        const auto& vehicle_twist = received_json["vehicle_twist"];
+        if (vehicle_twist.HasMember("x") && vehicle_twist["x"].IsNumber() &&
+            vehicle_twist.HasMember("y") && vehicle_twist["y"].IsNumber() &&
+            vehicle_twist.HasMember("z") && vehicle_twist["z"].IsNumber()) {
+            twist[0] = vehicle_twist["x"].GetDouble();
+            twist[1] = vehicle_twist["y"].GetDouble();
+            twist[2] = vehicle_twist["z"].GetDouble();
+        } else {
+            RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Invalid or missing fields in 'vehicle_twist'");
+        }
+    } else {
+        RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Missing 'vehicle_twist' in JSON");
+    }
+
+    // Log the extracted information
+    RCLCPP_INFO(rclcpp::get_logger("MosaicClient"), 
+                "Received Vehicle Pose: x=%f, y=%f, z=%f", 
+                pose[0], pose[1], pose[2]);
+    RCLCPP_INFO(rclcpp::get_logger("MosaicClient"), 
+                "Received Vehicle Twist: x=%f, y=%f, z=%f", 
+                twist[0], twist[1], twist[2]);
+
+    onVehStatusReceived(pose, twist);
 }
 
 void MosaicClient::received_time(const std::shared_ptr<const std::vector<uint8_t>>& data) {
@@ -128,7 +177,6 @@ void MosaicClient::received_time(const std::shared_ptr<const std::vector<uint8_t
 
     RCLCPP_DEBUG(rclcpp::get_logger("MosaicClient"), "process_time successfully deserialized unsigned long: %lu", timestep_received);
 
-    // Call your method to handle the received time
     onTimeReceived(timestep_received);
     
 }

@@ -36,7 +36,8 @@ public:
 
     // boost::signals2::signal<void(std::vector<uint8_t> const &, uint16_t id)> onMessageReceived;
     boost::signals2::signal<void(unsigned long)> onTimeReceived;
-    boost::signals2::signal<void(std::vector<uint8_t> const & )> onVehStatusReceived;
+    boost::signals2::signal<void(const std::array<double, 3>& , const std::array<double, 3>& )> onVehStatusReceived;
+
 
 private:
     void received_v2x(const std::shared_ptr<const std::vector<uint8_t>>& data);
