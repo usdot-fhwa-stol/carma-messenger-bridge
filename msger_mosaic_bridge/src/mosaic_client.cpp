@@ -10,26 +10,28 @@ MosaicClient::~MosaicClient() {
 }
 
 void MosaicClient::initialization(const ConnectionConfig& config, boost::system::error_code &ec) {
+    bool all_connected = true;
+
+    // // Attempt to connect to V2X, if enabled
     // if (config.enable_v2x) {
-    //     conn_manager_.connect(config.ip_address, config.v2x_port_remote, config.v2x_port_local,
-    //         [this](const std::shared_ptr<const std::vector<uint8_t>>& data) {
-    //             this->received_v2x(data);
-    //         }, ec, v2x_running_);
+    //     all_connected &= attempt_connection(config.ip_address, config.v2x_port_remote, config.v2x_port_local,
+    //                                         [this](const std::shared_ptr<const std::vector<uint8_t>>& data) { this->received_v2x(data); }, 
+    //                                         v2x_running_, "V2X port", ec);
     // }
 
     if (config.enable_registration) {
-        conn_manager_.connect(config.ip_address, config.registration_port_remote, config.registration_port_local,
-            [this](const std::shared_ptr<const std::vector<uint8_t>>& data) {
-                this->received_time(data);
-            }, ec, registration_running_);
+        all_connected &= attempt_connection(config.ip_address, config.registration_port_remote, config.registration_port_local,
+                                            [this](const std::shared_ptr<const std::vector<uint8_t>>& data) { this->received_time(data); }, 
+                                            registration_running_, "registration port", ec);
     }
 
     if (config.enable_vehicle_status) {
-        conn_manager_.connect(config.ip_address, config.vehicle_status_port_remote, config.vehicle_status_port_local,
-            [this](const std::shared_ptr<const std::vector<uint8_t>>& data) {
-                this->received_vehicle_status(data);
-            }, ec, vehicle_status_running_);
+        all_connected &= attempt_connection(config.ip_address, config.vehicle_status_port_remote, config.vehicle_status_port_local,
+                                            [this](const std::shared_ptr<const std::vector<uint8_t>>& data) { this->received_vehicle_status(data); }, 
+                                            vehicle_status_running_, "vehicle status port", ec);
     }
+
+    return all_connected;
 }
 
 void MosaicClient::close() {

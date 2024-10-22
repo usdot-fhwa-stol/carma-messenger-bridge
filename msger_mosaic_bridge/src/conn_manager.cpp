@@ -48,14 +48,13 @@ bool ConnectionManager::connect(const std::string &remote_address,
 }
 
 bool ConnectionManager::send_message(const std::string &connection_type, const std::shared_ptr<std::vector<uint8_t>>& message) {
-    // Check if the connection is running
+    
     if (sockets_.find(connection_type) == sockets_.end()) {
         RCLCPP_ERROR(rclcpp::get_logger("ConnectionManager"), "Socket not found for connection type: %s", connection_type.c_str());
         return false;
     }
 
     try {
-        // Ensure `output_strand_` and `io_context` are initialized before posting
         if (!output_strand_ || !io_) {
             RCLCPP_ERROR(rclcpp::get_logger("ConnectionManager"), "Strand or IO context not properly initialized");
             return false;

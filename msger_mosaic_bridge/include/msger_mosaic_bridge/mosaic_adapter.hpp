@@ -8,9 +8,12 @@
 class MosaicAdapter : public rclcpp::Node {
 public:
     MosaicAdapter();
-    virtual ~MosaicAdapter();
+    ~MosaicAdapter() { shutdown(); };
 
 private:
+
+    virtual void shutdown() override;
+
     MosaicClient mosaic_client_;
     void initialize();
 
