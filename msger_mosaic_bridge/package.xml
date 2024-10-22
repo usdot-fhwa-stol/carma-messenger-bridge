@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>msger_mosaic_bridge</name>
+  <version>0.0.1</version>
+  <description>A ROS2 bridge for communicating with a MOSAIC simulation.</description>
+
+  <maintainer email="your-email@example.com">Your Name</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <depend>rclcpp</depend>
+  <depend>gps_msgs</depend>  <!-- Declare dependency on gps_msgs -->
+  <depend>geometry_msgs</depend>  <!-- Declare dependency on geometry_msgs -->
+
+  <export>
+    <!-- Other tools can go here -->
+  </export>
+</package>
