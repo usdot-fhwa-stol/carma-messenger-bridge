@@ -1,7 +1,9 @@
 #include "mosaic_client.hpp"
 #include <rapidjson/document.h>
 
-MosaicClient::MosaicClient() {}
+MosaicClient::MosaicClient() {
+    conn_manager_.onError.connect([this](const boost::system::error_code& err){conn_manager_error_ = err;});
+}
 
 MosaicClient::~MosaicClient() {
     try {
@@ -13,13 +15,13 @@ bool MosaicClient::initialization(const ConnectionConfig& config, boost::system:
     bool all_connected = true;
 
     if (config.enable_registration) {
-        all_connected &= conn_manager_.connect(config.ip_address, config.registration_port_remote, config.registration_port_local,
+        all_connected &= conn_manager_.connect("registration", config.ip_address, config.registration_port_remote, config.registration_port_local,
                                             [this](const std::shared_ptr<const std::vector<uint8_t>>& data) { this->received_time(data); }, 
                                             ec, registration_running_);
     }
 
     if (config.enable_vehicle_status) {
-        all_connected &= conn_manager_.connect(config.ip_address, config.vehicle_status_port_remote, config.vehicle_status_port_local,
+        all_connected &= conn_manager_.connect("vehicle_status", config.ip_address, config.vehicle_status_port_remote, config.vehicle_status_port_local,
                                             [this](const std::shared_ptr<const std::vector<uint8_t>>& data) { this->received_vehicle_status(data); }, 
                                             ec, vehicle_status_running_);
     }
@@ -36,7 +38,16 @@ void MosaicClient::close() {
 }
 
 bool MosaicClient::send_registration_message(const std::shared_ptr<std::vector<uint8_t>>& message) {
-    return conn_manager_.send_message("registration", message);
+    bool isSent = conn_manager_.send_message("registration", message);
+    if (conn_manager_error_.value())
+    RCLCPP_ERROR(
+        rclcpp::get_logger("MosaicClient"),
+        "Failed to send registration message with error: %s (%d)", 
+        conn_manager_error_.message().c_str(), 
+        conn_manager_error_.value()
+    );
+    return isSent;
+    
 }
 
 void MosaicClient::received_vehicle_status(const std::shared_ptr<const std::vector<uint8_t>>& data) {

@@ -18,6 +18,7 @@ def generate_launch_description():
                 {'registration_port_local': 4003},
                 {'vehicle_status_port_remote': 7001},
                 {'vehicle_status_port_local': 4004}
-            ]
+            ],
+            arguments=['--ros-args', '--log-level', 'DEBUG']  # Setting log level to DEBUG
         )
     ])

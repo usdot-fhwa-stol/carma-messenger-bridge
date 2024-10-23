@@ -46,6 +46,7 @@ private:
     std::unique_ptr<boost::asio::io_context> io_;
     std::unique_ptr<std::thread> io_thread_;
     std::unique_ptr<boost::asio::io_context::work> work_;
+    boost::system::error_code conn_manager_error_;
 };
 
 #endif // MOSAIC_CLIENT_HPP

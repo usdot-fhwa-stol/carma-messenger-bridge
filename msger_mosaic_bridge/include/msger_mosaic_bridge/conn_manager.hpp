@@ -14,7 +14,8 @@ class ConnectionManager {
 public:
     using MessageHandler = std::function<void(const std::shared_ptr<const std::vector<uint8_t>>&)>;
 
-    bool connect(const std::string &remote_address,
+    bool connect(const std::string &connectionType,
+                 const std::string &remote_address,
                  unsigned short remote_port,
                  unsigned short local_port,
                  MessageHandler handler,
@@ -22,7 +23,7 @@ public:
                  bool &is_running);
 
     bool send_message(const std::string &connection_type, const std::shared_ptr<std::vector<uint8_t>>& message);
-
+    boost::signals2::signal<void(const boost::system::error_code&)> onError;
     void close(const std::string &connection_type, bool &is_running);
 
 private:
@@ -32,6 +33,7 @@ private:
 
     std::unique_ptr<boost::asio::io_context> io_;
     std::unique_ptr<boost::asio::io_context::strand> output_strand_;
+
 };
 
 #endif // CONN_MANAGER_HPP
