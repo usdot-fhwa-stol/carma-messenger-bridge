@@ -9,7 +9,9 @@ def generate_launch_description():
             name='mosaic_adapter',
             output='screen',
             parameters=[
-                {'ip_address': '192.168.1.101'},
+                {'role_id': 'msg_veh_1'},
+                {'ip_address': '172.2.0.2'},
+                {'host_ip': '172.2.0.3'},
                 {'enable_registration': True},
                 {'enable_vehicle_status': True},
                 {'registration_port_remote': 6001},

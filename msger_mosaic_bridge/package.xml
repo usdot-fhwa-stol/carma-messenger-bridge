@@ -13,7 +13,7 @@
   <depend>gps_msgs</depend>  <!-- Declare dependency on gps_msgs -->
   <depend>geometry_msgs</depend>  <!-- Declare dependency on geometry_msgs -->
 
-  <export>
-    <!-- Other tools can go here -->
-  </export>
+  <export>                               
+    <build_type>ament_cmake</build_type> 
+  </export> 
 </package>

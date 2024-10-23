@@ -3,7 +3,7 @@ project(msger_mosaic_bridge)
 
 # Set compile options
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
+  add_compile_options(-Wall -Wextra -Wpedantic -Wno-unused-parameter)
 endif()
 
 # Add RapidJSON support for std::string
@@ -22,18 +22,18 @@ include_directories(
 )
 
 # Declare a C++ executable
-add_executable(${PROJECT_NAME}_node
+add_executable(mosaic_adapter_node
   src/main.cpp
   src/mosaic_adapter.cpp
   src/mosaic_client.cpp
   src/conn_manager.cpp
 )
 
-# Rename the executable to follow ROS2 conventions
-set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME ${PROJECT_NAME} PREFIX "")
+# Specify target properties for the executable
+set_target_properties(mosaic_adapter_node PROPERTIES OUTPUT_NAME "mosaic_adapter_node" PREFIX "")
 
-# Specify libraries to link a library or executable target against
-ament_target_dependencies(${PROJECT_NAME}_node
+# Link against required libraries
+ament_target_dependencies(mosaic_adapter_node
   rclcpp
   gps_msgs
   geometry_msgs
@@ -47,7 +47,7 @@ install(DIRECTORY
 
 # Install C++ executables
 install(TARGETS
-  ${PROJECT_NAME}_node
+  mosaic_adapter_node
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -3,6 +3,7 @@
 #include "gps_msgs/msg/gps_fix.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "rosgraph_msgs/msg/clock.hpp"
+#include <rapidjson/document.h>
 
 
 class MosaicAdapter : public rclcpp::Node {
@@ -10,9 +11,11 @@ public:
     MosaicAdapter();
     ~MosaicAdapter() { shutdown(); };
 
+    std::string compose_handshake_msg(const std::string& role_id, int veh_status_port, int time_port, const std::string& ip);
+    void broadcast_handshake_msg(const std::string& msg_string);
 private:
 
-    virtual void shutdown() override;
+    void shutdown();
 
     MosaicClient mosaic_client_;
     void initialize();
