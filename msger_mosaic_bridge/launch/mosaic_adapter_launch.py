@@ -15,8 +15,8 @@ from launch_ros.actions import Node
 def generate_launch_description():
     return LaunchDescription([
         Node(
-            package='msger_mosaic_bridge',
-            executable='mosaic_adapter_node',
+            package='msger_mosaic_bridge',  # Ensure this is the correct package name
+            executable='mosaic_adapter_node',  # Ensure this is the correct executable name
             name='mosaic_adapter',
             output='screen',
             parameters=[
@@ -29,6 +29,10 @@ def generate_launch_description():
                 {'registration_port_local': 4003},
                 {'vehicle_status_port_remote': 7001},
                 {'vehicle_status_port_local': 4004}
+            ],
+            remappings=[
+                ('vehicle_pose', 'hardware_interface/gps_common_fix'),  # Remap the GPS topic
+                ('velocity', 'hardware_interface/velocity')  # Remap the velocity topic
             ],
             arguments=['--ros-args', '--log-level', 'DEBUG']  # Setting log level to DEBUG
         )
