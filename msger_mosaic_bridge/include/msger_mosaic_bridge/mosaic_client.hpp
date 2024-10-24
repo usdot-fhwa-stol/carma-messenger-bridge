@@ -59,7 +59,7 @@ public:
      * @param ec Output parameter to capture any error that occurs during initialization.
      * @return Returns true if all connections are successfully initialized, false otherwise.
      */
-    bool initialization(const ConnectionConfig& config, boost::system::error_code &ec);
+    bool initialize(const ConnectionConfig& config, boost::system::error_code &ec);
 
     /**
      * Sends a registration message.
@@ -73,7 +73,8 @@ public:
     void close();
 
     boost::signals2::signal<void(unsigned long)> onTimeReceived;
-    boost::signals2::signal<void(const std::array<double, 3>& , const std::array<double, 3>& )> onVehStatusReceived;
+    boost::signals2::signal<void(const std::array<double, 3>&)> onVehPoseReceived;
+    boost::signals2::signal<void(const std::array<double, 3>&)> onVehTwistReceived;
     boost::signals2::signal<void(bool siren_active, bool light_active)> onSirenAndLightStatuReceived;
 
 

@@ -51,7 +51,6 @@ bool ConnectionManager::connect(const std::string &connectionType,
             listener.reset(new cav::UDPListener(*io_, local_port));
             listener->onReceive.connect(handler);
             listener->start();
-
             listeners_[connectionType] = std::move(listener);
         }        
 
@@ -133,13 +132,32 @@ void ConnectionManager::close(const std::string &connection_type, bool &is_runni
         RCLCPP_WARN(rclcpp::get_logger("ConnectionManager"), "%s connection is not running", connection_type.c_str());
         return;
     }
-
-    auto it = listeners_.find(connection_type);
-    if (it != listeners_.end()) {
-        it->second->stop();
-        listeners_.erase(it);
-        sockets_.erase(connection_type);
-        remote_endpoints_.erase(connection_type);
-        is_running = false;
+    RCLCPP_DEBUG(rclcpp::get_logger("ConnectionManager"), "Trying to stop %s listeners", connection_type.c_str());
+    // Stop and remove the listener associated with the connection type, if it exists
+    auto listener_it = listeners_.find(connection_type);
+    if (listener_it != listeners_.end()) {
+        listener_it->second->stop(); // Stops the UDPListener instance, not the socket
+    RCLCPP_DEBUG(rclcpp::get_logger("ConnectionManager"), "%s listeners is stopped", connection_type.c_str());
+        listeners_.erase(listener_it);
+    RCLCPP_DEBUG(rclcpp::get_logger("ConnectionManager"), "%s listeners reomved", connection_type.c_str());
     }
+
+    // Close and remove the socket associated with the connection type
+    auto socket_it = sockets_.find(connection_type);
+    if (socket_it != sockets_.end()) {
+        if (socket_it->second->is_open()) {
+            boost::system::error_code ec;
+            socket_it->second->close(ec);
+            if (ec) {
+                RCLCPP_ERROR(rclcpp::get_logger("ConnectionManager"), "Error closing socket for connection %s: %s", connection_type.c_str(), ec.message().c_str());
+            }
+        }
+        sockets_.erase(socket_it);
+    }
+
+    // Remove the remote endpoint associated with the connection type
+    remote_endpoints_.erase(connection_type);
+
+    // Mark connection as not running
+    is_running = false;
 }

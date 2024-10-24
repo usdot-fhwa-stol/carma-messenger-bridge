@@ -14,6 +14,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(gps_msgs REQUIRED)
+find_package(ament_cmake_gtest REQUIRED) # Add support for Google Test
 
 # Include directories
 include_directories(
@@ -21,23 +22,26 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/thirdparty/rapidjson/include
 )
 
-# Declare a C++ executable
-add_executable(mosaic_adapter_node
-  src/main.cpp
+# Create a library from shared source files
+add_library(msger_mosaic_bridge_lib
   src/mosaic_adapter.cpp
   src/mosaic_client.cpp
   src/conn_manager.cpp
 )
 
-# Specify target properties for the executable
-set_target_properties(mosaic_adapter_node PROPERTIES OUTPUT_NAME "mosaic_adapter_node" PREFIX "")
-
-# Link against required libraries
-ament_target_dependencies(mosaic_adapter_node
+# Link the shared library against required dependencies
+ament_target_dependencies(msger_mosaic_bridge_lib
   rclcpp
   gps_msgs
   geometry_msgs
 )
+
+# Declare a C++ executable using the shared library
+add_executable(mosaic_adapter_node src/main.cpp)
+target_link_libraries(mosaic_adapter_node msger_mosaic_bridge_lib)
+
+# Specify target properties for the executable
+set_target_properties(mosaic_adapter_node PROPERTIES OUTPUT_NAME "mosaic_adapter_node" PREFIX "")
 
 # Install the launch directory
 install(DIRECTORY
@@ -51,10 +55,16 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME}
 )
 
-# Linting
+# Linting and Testing
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   ament_lint_auto_find_test_dependencies()
+
+  # Add test executables and link against the shared library
+  ament_add_gtest(test_mosaic_adapter test/test_mosaic_adapter.cpp)
+  target_link_libraries(test_mosaic_adapter msger_mosaic_bridge_lib)
+  ament_target_dependencies(test_mosaic_adapter rclcpp gps_msgs geometry_msgs)
+
 endif()
 
 # Package configuration

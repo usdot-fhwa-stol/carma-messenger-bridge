@@ -28,7 +28,7 @@ MosaicClient::~MosaicClient() {
     } catch (...) {}
 }
 
-bool MosaicClient::initialization(const ConnectionConfig& config, boost::system::error_code &ec) {
+bool MosaicClient::initialize(const ConnectionConfig& config, boost::system::error_code &ec) {
     bool all_connected = true;
 
     if (config.enable_registration) {
@@ -39,6 +39,8 @@ bool MosaicClient::initialization(const ConnectionConfig& config, boost::system:
                                                [this](const std::shared_ptr<const std::vector<uint8_t>>& data) { this->received_time(data); }, 
                                                ec, 
                                                registration_running_);
+        if (all_connected)
+            RCLCPP_INFO(rclcpp::get_logger("MosaicClient"), "registration connection initialized successfully.");
     }
 
     if (config.enable_vehicle_status) {
@@ -49,7 +51,8 @@ bool MosaicClient::initialization(const ConnectionConfig& config, boost::system:
                                                [this](const std::shared_ptr<const std::vector<uint8_t>>& data) { this->received_vehicle_status(data); }, 
                                                ec, 
                                                vehicle_status_running_);
-        
+        if (all_connected)
+            RCLCPP_INFO(rclcpp::get_logger("MosaicClient"), "vehicle_status connection initialized successfully.");        
 
         all_connected &= conn_manager_.connect("siren_and_light_status", 
                                                config.messenger_ip_address, 
@@ -58,6 +61,8 @@ bool MosaicClient::initialization(const ConnectionConfig& config, boost::system:
                                                nullptr, //no need a listener
                                                ec, 
                                                siren_and_light_running_);
+        if (all_connected)
+            RCLCPP_INFO(rclcpp::get_logger("MosaicClient"), "siren_and_light_status connection initialized successfully.");      
 
     }
 
@@ -65,11 +70,16 @@ bool MosaicClient::initialization(const ConnectionConfig& config, boost::system:
 }
 
 void MosaicClient::close() {
-    work_.reset();
-    io_->stop();
-    io_thread_->join();
-    conn_manager_.close("registration", registration_running_);
-    conn_manager_.close("vehicle_status", vehicle_status_running_);
+    if (registration_running_){
+        RCLCPP_INFO(rclcpp::get_logger("MosaicClient"), "Stopping registration connection");  
+        conn_manager_.close("registration", registration_running_);
+    }
+        
+    if (vehicle_status_running_){
+        RCLCPP_INFO(rclcpp::get_logger("MosaicClient"), "Stopping vehicle_status connection");  
+        conn_manager_.close("vehicle_status", vehicle_status_running_);
+    }
+        
 }
 
 bool MosaicClient::send_registration_message(const std::shared_ptr<std::vector<uint8_t>>& message) {
@@ -164,7 +174,8 @@ void MosaicClient::received_vehicle_status(const std::shared_ptr<const std::vect
                 "Siren Active: %s, Light Active: %s",
                 siren_active ? "true" : "false", light_active ? "true" : "false");
 
-    onVehStatusReceived(pose, twist);
+    onVehPoseReceived(pose);
+    onVehTwistReceived(twist);
     onSirenAndLightStatuReceived(siren_active, light_active);
 }
 

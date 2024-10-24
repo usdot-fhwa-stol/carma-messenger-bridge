@@ -27,15 +27,17 @@ class MosaicAdapter : public rclcpp::Node {
 public:
     MosaicAdapter();
     ~MosaicAdapter() { shutdown(); };
+    void initialize();
+    MosaicClient mosaic_client_;
 private:
 
     void shutdown();
 
-    void initialize();
 
     // Callback method that is invoked when vehicle status data is received from the network.
     // It translates the received data into ROS2 GPS and Twist messages and publishes them on the appropriate topics.
-    void on_vehicle_status_received_handler(const std::array<double, 3>& pose, const std::array<double, 3>& twist);
+    void on_vehicle_twist_received_handler(const std::array<double, 3>& twist);
+    void on_vehicle_pose_received_handler(const std::array<double, 3>& pose);
 
     // Callback method that handles time synchronization messages received from the network. It publishes the time data
     // as ROS2 Clock messages to synchronize components within the ROS2 environment.
@@ -51,12 +53,11 @@ private:
     // configuration and ensuring that the server is aware of the client's presence and ready to exchange data.
     void broadcast_handshake_msg(const std::string& msg_string);
 
-    rclcpp::Publisher<gps_msgs::msg::GPSFix>::SharedPtr gps_publisher_;
-    rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_publisher_;
+    rclcpp::Publisher<gps_msgs::msg::GPSFix>::SharedPtr gps_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_pub_;
     rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr time_pub_;
 
     boost::system::error_code client_error_;
     ConnectionConfig config_;
-    MosaicClient mosaic_client_;
 };
 

@@ -27,10 +27,10 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
 
     this->declare_parameter<std::string>("/vehicle_id", "default_vehicle_id");
     this->declare_parameter<std::string>("role_id", "msg_veh_1");
-    this->declare_parameter<std::string>("cdasim_ip_address", "172.2.0.2");
-    this->declare_parameter<std::string>("host_ip", "172.2.0.3");
-    this->declare_parameter<bool>("enable_registration", false);
-    this->declare_parameter<bool>("enable_vehicle_status", false);
+    this->declare_parameter<std::string>("cdasim_ip_address", "127.0.0.1");
+    this->declare_parameter<std::string>("host_ip", "127.0.0.1");
+    this->declare_parameter<bool>("enable_registration", true);
+    this->declare_parameter<bool>("enable_vehicle_status", true);
     this->declare_parameter<int>("registration_port_remote", 6000);
     this->declare_parameter<int>("registration_port_local", 4001);
     this->declare_parameter<int>("vehicle_status_port_remote", 7000);
@@ -52,8 +52,32 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
     this->get_parameter("vehicle_status_port_local", temp_port);
     config_.vehicle_status_port_local = static_cast<unsigned short>(temp_port);
 
+    // Log all configuration data
+    RCLCPP_INFO(this->get_logger(),
+                "MosaicAdapter Configuration:\n"
+                " - vehicle_id: %s\n"
+                " - role_id: %s\n"
+                " - cdasim_ip_address: %s\n"
+                " - host_ip: %s\n"
+                " - enable_registration: %s\n"
+                " - enable_vehicle_status: %s\n"
+                " - registration_port_remote: %d\n"
+                " - registration_port_local: %d\n"
+                " - vehicle_status_port_remote: %d\n"
+                " - vehicle_status_port_local: %d",
+                config_.vehicle_id.c_str(),
+                config_.role_id.c_str(),
+                config_.cdasim_ip_address.c_str(),
+                "127.0.0.3",  // Replace with correct retrieved value if needed
+                config_.enable_registration ? "true" : "false",
+                config_.enable_vehicle_status ? "true" : "false",
+                config_.registration_port_remote,
+                config_.registration_port_local,
+                config_.vehicle_status_port_remote,
+                config_.vehicle_status_port_local);
+
     boost::system::error_code ec;
-    bool init_successful = mosaic_client_.initialization(config_, ec);
+    bool init_successful = mosaic_client_.initialize(config_, ec);
 
     if (!init_successful) {
         if (ec) {
@@ -67,18 +91,25 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
         RCLCPP_INFO(this->get_logger(), "MosaicClient initialized successfully.");
     }
 
-    gps_publisher_ = this->create_publisher<gps_msgs::msg::GPSFix>("vehicle_pose", 10);
-    twist_publisher_ = this->create_publisher<geometry_msgs::msg::TwistStamped>("velocity", 10);
+    gps_pub_ = this->create_publisher<gps_msgs::msg::GPSFix>("vehicle_pose", 10);
+    twist_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>("velocity", 10);
     time_pub_ = this->create_publisher<rosgraph_msgs::msg::Clock>("/sim_clock", 10);
 
     mosaic_client_.onTimeReceived.connect([this](unsigned long timestamp) {this->on_time_received_handler(timestamp); });
-    mosaic_client_.onVehStatusReceived.connect([this](const std::array<double, 3>& pose, const std::array<double, 3>& twist) {
-        this->on_vehicle_status_received_handler(pose, twist);
+    mosaic_client_.onVehPoseReceived.connect([this](const std::array<double, 3>& pose) {
+        this->on_vehicle_pose_received_handler(pose);
+    });
+    mosaic_client_.onVehTwistReceived.connect([this](const std::array<double, 3>& twist) {
+        this->on_vehicle_twist_received_handler(twist);
     });
     mosaic_client_.onSirenAndLightStatuReceived.connect([this](bool siren_active, bool light_active){
         this->on_siren_and_light_status_recieved_handler(siren_active, light_active);
     });
 
+
+}
+
+void MosaicAdapter::initialize(){
     std::string handshake_msg = compose_handshake_msg(config_.role_id, 
                                                       config_.vehicle_status_port_local, 
                                                       config_.registration_port_local, 
@@ -88,14 +119,16 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
 
 void MosaicAdapter::shutdown()
 {
-    RCLCPP_INFO(this->get_logger(), "Shutdown signal received from DriverApplication");
+    RCLCPP_INFO(this->get_logger(), "Shutdown signal received");
     mosaic_client_.close();
 }
 
-void MosaicAdapter::on_vehicle_status_received_handler(const std::array<double, 3>& pose, const std::array<double, 3>& twist) {
-    gps_msgs::msg::GPSFix gps_msg;
-    geometry_msgs::msg::TwistStamped twist_msg;
+void MosaicAdapter::on_vehicle_pose_received_handler(const std::array<double, 3>& pose) {
+    RCLCPP_INFO(this->get_logger(), 
+                "Received Pose - Lat: %f, Lon: %f, Alt: %f", 
+                pose[0], pose[1], pose[2]);
 
+    gps_msgs::msg::GPSFix gps_msg;
     gps_msg.latitude = pose[0];  
     gps_msg.longitude = pose[1]; 
     gps_msg.altitude = pose[2];  
@@ -104,6 +137,16 @@ void MosaicAdapter::on_vehicle_status_received_handler(const std::array<double, 
                 "GPSFix Message - Lat: %f, Lon: %f, Alt: %f", 
                 gps_msg.latitude, gps_msg.longitude, gps_msg.altitude);
 
+    gps_pub_->publish(gps_msg);
+}
+
+
+void MosaicAdapter::on_vehicle_twist_received_handler(const std::array<double, 3>& twist) {
+    RCLCPP_INFO(this->get_logger(), 
+            "Received Twist - x: %f, y: %f, z: %f", 
+            twist[0], twist[1], twist[2]);
+
+    geometry_msgs::msg::TwistStamped twist_msg;
     twist_msg.twist.linear.x = twist[0];
     twist_msg.twist.linear.y = twist[1];
     twist_msg.twist.linear.z = twist[2]; 
@@ -114,10 +157,8 @@ void MosaicAdapter::on_vehicle_status_received_handler(const std::array<double, 
                 "TwistStamped Message - Linear: x=%f, y=%f, z=%f", 
                 twist_msg.twist.linear.x, twist_msg.twist.linear.y, twist_msg.twist.linear.z);
 
-    gps_publisher_->publish(gps_msg);
-    twist_publisher_->publish(twist_msg);
+    twist_pub_->publish(twist_msg);
 }
-
 
 
 void MosaicAdapter::on_time_received_handler(unsigned long timestamp)
