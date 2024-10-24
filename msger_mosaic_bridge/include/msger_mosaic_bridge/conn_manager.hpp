@@ -59,7 +59,7 @@ public:
     bool send_message(const std::string &connection_type, const std::shared_ptr<std::vector<uint8_t>>& message);
     boost::signals2::signal<void(const boost::system::error_code&)> onError;
 
-        /**
+    /**
      * Closes a specified connection.
      * @param connection_type The identifier of the connection to close.
      * @param is_running Reference to a boolean that indicates the connection's active state, set to false on close.

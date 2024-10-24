@@ -40,6 +40,8 @@ private:
     // Callback method that handles time synchronization messages received from the network. It publishes the time data
     // as ROS2 Clock messages to synchronize components within the ROS2 environment.
     void on_time_received_handler(unsigned long timestamp);
+
+    void on_siren_and_light_status_recieved_handler(bool siren_active, bool light_active);
     
     // Utility method to compose a JSON-formatted handshake message that is used to establish initial communication with the
     // network server. This message includes necessary configuration details such as role ID and IP addresses.

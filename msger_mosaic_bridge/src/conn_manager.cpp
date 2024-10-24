@@ -46,12 +46,14 @@ bool ConnectionManager::connect(const std::string &connectionType,
     }
 
     try {
-        std::unique_ptr<cav::UDPListener> listener;
-        listener.reset(new cav::UDPListener(*io_, local_port));
-        listener->onReceive.connect(handler);
-        listener->start();
+        if (handler){
+            std::unique_ptr<cav::UDPListener> listener;
+            listener.reset(new cav::UDPListener(*io_, local_port));
+            listener->onReceive.connect(handler);
+            listener->start();
 
-        listeners_[connectionType] = std::move(listener);
+            listeners_[connectionType] = std::move(listener);
+        }        
 
         // auto socket = std::make_unique<boost::asio::ip::udp::socket>(*io_, remote_udp_ep.protocol());
         std::unique_ptr<boost::asio::ip::udp::socket> socket;

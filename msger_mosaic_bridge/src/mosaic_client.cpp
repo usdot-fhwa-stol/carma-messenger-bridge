@@ -32,15 +32,33 @@ bool MosaicClient::initialization(const ConnectionConfig& config, boost::system:
     bool all_connected = true;
 
     if (config.enable_registration) {
-        all_connected &= conn_manager_.connect("registration", config.ip_address, config.registration_port_remote, config.registration_port_local,
-                                            [this](const std::shared_ptr<const std::vector<uint8_t>>& data) { this->received_time(data); }, 
-                                            ec, registration_running_);
+        all_connected &= conn_manager_.connect("registration", 
+                                               config.cdasim_ip_address, 
+                                               config.registration_port_remote, 
+                                               config.registration_port_local,
+                                               [this](const std::shared_ptr<const std::vector<uint8_t>>& data) { this->received_time(data); }, 
+                                               ec, 
+                                               registration_running_);
     }
 
     if (config.enable_vehicle_status) {
-        all_connected &= conn_manager_.connect("vehicle_status", config.ip_address, config.vehicle_status_port_remote, config.vehicle_status_port_local,
-                                            [this](const std::shared_ptr<const std::vector<uint8_t>>& data) { this->received_vehicle_status(data); }, 
-                                            ec, vehicle_status_running_);
+        all_connected &= conn_manager_.connect("vehicle_status", 
+                                               config.cdasim_ip_address, 
+                                               config.vehicle_status_port_remote, 
+                                               config.vehicle_status_port_local,
+                                               [this](const std::shared_ptr<const std::vector<uint8_t>>& data) { this->received_vehicle_status(data); }, 
+                                               ec, 
+                                               vehicle_status_running_);
+        
+
+        all_connected &= conn_manager_.connect("siren_and_light_status", 
+                                               config.messenger_ip_address, 
+                                               config.siren_and_light_status_port_remote, 
+                                               config.siren_and_light_status_port_local,
+                                               nullptr, //no need a listener
+                                               ec, 
+                                               siren_and_light_running_);
+
     }
 
     return all_connected;
@@ -64,7 +82,18 @@ bool MosaicClient::send_registration_message(const std::shared_ptr<std::vector<u
         conn_manager_error_.value()
     );
     return isSent;
-    
+}
+
+bool MosaicClient::send_siren_and_light_message(const std::shared_ptr<std::vector<uint8_t>>& message) {
+    bool isSent = conn_manager_.send_message("siren_and_light_status", message);
+    if (conn_manager_error_.value())
+    RCLCPP_ERROR(
+        rclcpp::get_logger("MosaicClient"),
+        "Failed to send siren_and_light_status message with error: %s (%d)", 
+        conn_manager_error_.message().c_str(), 
+        conn_manager_error_.value()
+    );
+    return isSent;
 }
 
 void MosaicClient::received_vehicle_status(const std::shared_ptr<const std::vector<uint8_t>>& data) {
@@ -79,6 +108,8 @@ void MosaicClient::received_vehicle_status(const std::shared_ptr<const std::vect
 
     std::array<double, 3> pose = {0.0, 0.0, 0.0};
     std::array<double, 3> twist = {0.0, 0.0, 0.0};
+    bool siren_active = false;
+    bool light_active = false;
 
     if (received_json.HasMember("vehicle_pose") && received_json["vehicle_pose"].IsObject()) {
         const auto& vehicle_pose = received_json["vehicle_pose"];
@@ -110,6 +141,18 @@ void MosaicClient::received_vehicle_status(const std::shared_ptr<const std::vect
         RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Missing 'vehicle_twist' in JSON");
     }
 
+    if (received_json.HasMember("siren_active") && received_json["siren_active"].IsBool()) {
+        siren_active = received_json["siren_active"].GetBool();
+    } else {
+        RCLCPP_WARN(rclcpp::get_logger("MosaicClient"), "Missing 'siren_active' in JSON");
+    }
+
+    if (received_json.HasMember("light_active") && received_json["light_active"].IsBool()) {
+        light_active = received_json["light_active"].GetBool();
+    } else {
+        RCLCPP_WARN(rclcpp::get_logger("MosaicClient"), "Missing 'light_active' in JSON");
+    }
+
     // Log the extracted information
     RCLCPP_INFO(rclcpp::get_logger("MosaicClient"), 
                 "Received Vehicle Pose: x=%f, y=%f, z=%f", 
@@ -117,8 +160,12 @@ void MosaicClient::received_vehicle_status(const std::shared_ptr<const std::vect
     RCLCPP_INFO(rclcpp::get_logger("MosaicClient"), 
                 "Received Vehicle Twist: x=%f, y=%f, z=%f", 
                 twist[0], twist[1], twist[2]);
+    RCLCPP_INFO(rclcpp::get_logger("MosaicClient"),
+                "Siren Active: %s, Light Active: %s",
+                siren_active ? "true" : "false", light_active ? "true" : "false");
 
     onVehStatusReceived(pose, twist);
+    onSirenAndLightStatuReceived(siren_active, light_active);
 }
 
 void MosaicClient::received_time(const std::shared_ptr<const std::vector<uint8_t>>& data) {

@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2024 LEIDOS.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License.
+*/
+
+
 #include "mosaic_adapter.hpp"
 #include "mosaic_client.hpp"
 #include <rapidjson/document.h>
@@ -10,7 +27,7 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
 
     this->declare_parameter<std::string>("/vehicle_id", "default_vehicle_id");
     this->declare_parameter<std::string>("role_id", "msg_veh_1");
-    this->declare_parameter<std::string>("ip_address", "172.2.0.2");
+    this->declare_parameter<std::string>("cdasim_ip_address", "172.2.0.2");
     this->declare_parameter<std::string>("host_ip", "172.2.0.3");
     this->declare_parameter<bool>("enable_registration", false);
     this->declare_parameter<bool>("enable_vehicle_status", false);
@@ -21,7 +38,7 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
 
     this->get_parameter("/vehicle_id", config_.vehicle_id);
     this->get_parameter("role_id", config_.role_id);
-    this->get_parameter("ip_address", config_.ip_address);
+    this->get_parameter("cdasim_ip_address", config_.cdasim_ip_address);
     this->get_parameter("enable_registration", config_.enable_registration);
     this->get_parameter("enable_vehicle_status", config_.enable_vehicle_status);
     
@@ -58,11 +75,14 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
     mosaic_client_.onVehStatusReceived.connect([this](const std::array<double, 3>& pose, const std::array<double, 3>& twist) {
         this->on_vehicle_status_received_handler(pose, twist);
     });
+    mosaic_client_.onSirenAndLightStatuReceived.connect([this](bool siren_active, bool light_active){
+        this->on_siren_and_light_status_recieved_handler(siren_active, light_active);
+    });
 
     std::string handshake_msg = compose_handshake_msg(config_.role_id, 
                                                       config_.vehicle_status_port_local, 
                                                       config_.registration_port_local, 
-                                                      config_.ip_address);
+                                                      config_.cdasim_ip_address);
     broadcast_handshake_msg(handshake_msg);
 }
 
@@ -98,6 +118,8 @@ void MosaicAdapter::on_vehicle_status_received_handler(const std::array<double, 
     twist_publisher_->publish(twist_msg);
 }
 
+
+
 void MosaicAdapter::on_time_received_handler(unsigned long timestamp)
 {
     rosgraph_msgs::msg::Clock time_now;
@@ -115,6 +137,22 @@ void MosaicAdapter::on_time_received_handler(unsigned long timestamp)
     time_now.clock.nanosec = static_cast<uint32_t>(timestamp - time_now.clock.sec * 1e9);
 
     time_pub_->publish(time_now);
+}
+
+void MosaicAdapter::on_siren_and_light_status_recieved_handler(bool siren_active, bool light_active){
+    uint8_t status_code = 0;
+    if (!siren_active && !light_active) {
+        status_code = SIRENS_AND_LIGHTS_INACTIVE;
+    } else if (siren_active && !light_active) {
+        status_code = ONLY_SIRENS_ACTIVE;
+    } else if (!siren_active && light_active) {
+        status_code = ONLY_LIGHTS_ACTIVE;
+    } else if (siren_active && light_active) {
+        status_code = SIRENS_AND_LIGHTS_ACTIVE;
+    }
+    
+    auto message = std::make_shared<std::vector<uint8_t>>(1, status_code);
+    mosaic_client_.send_siren_and_light_message(message);
 }
 
 
@@ -167,7 +205,7 @@ void MosaicAdapter::broadcast_handshake_msg(const std::string& msg_string)
     std::shared_ptr<std::vector<uint8_t>> message_content = std::make_shared<std::vector<uint8_t>>(std::move(msg_vector));
 
     bool success = mosaic_client_.send_registration_message(message_content);
-    RCLCPP_DEBUG(this->get_logger(), "ip_address: %s", config_.ip_address.c_str());
+    RCLCPP_DEBUG(this->get_logger(), "ip_address: %s", config_.cdasim_ip_address.c_str());
     RCLCPP_DEBUG(this->get_logger(), "registration_port_local: %d", config_.registration_port_local);
     RCLCPP_DEBUG(this->get_logger(), "vehicle_status_port_local: %d", config_.vehicle_status_port_local);
 

@@ -21,7 +21,8 @@ def generate_launch_description():
             output='screen',
             parameters=[
                 {'role_id': 'msg_veh_1'},
-                {'ip_address': '172.2.0.2'},
+                {'messenger_ip_address': '172.7.0.2'},
+                {'cdasim_ip_address': '172.2.0.2'},
                 {'host_ip': '172.2.0.3'},
                 {'enable_registration': True},
                 {'enable_vehicle_status': True},
