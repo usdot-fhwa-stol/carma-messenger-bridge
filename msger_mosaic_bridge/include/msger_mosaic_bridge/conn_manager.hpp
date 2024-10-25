@@ -58,7 +58,6 @@ public:
      */
     bool send_message(const std::string &connection_type, const std::shared_ptr<std::vector<uint8_t>>& message);
     boost::signals2::signal<void(const boost::system::error_code&)> onError;
-    boost::signals2::signal<void(const std::size_t&)> onSent;
 
     /**
      * Closes a specified connection.

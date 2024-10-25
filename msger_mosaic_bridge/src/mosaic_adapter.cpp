@@ -136,7 +136,7 @@ void MosaicAdapter::shutdown()
 }
 
 void MosaicAdapter::on_vehicle_pose_received_handler(const std::array<double, 3>& pose) {
-    RCLCPP_INFO(this->get_logger(), 
+    RCLCPP_DEBUG(this->get_logger(), 
                 "Received Pose - Lat: %f, Lon: %f, Alt: %f", 
                 pose[0], pose[1], pose[2]);
 
@@ -145,7 +145,7 @@ void MosaicAdapter::on_vehicle_pose_received_handler(const std::array<double, 3>
     gps_msg.longitude = pose[1]; 
     gps_msg.altitude = pose[2];  
 
-    RCLCPP_INFO(this->get_logger(), 
+    RCLCPP_DEBUG(this->get_logger(), 
                 "GPSFix Message - Lat: %f, Lon: %f, Alt: %f", 
                 gps_msg.latitude, gps_msg.longitude, gps_msg.altitude);
 
@@ -154,7 +154,7 @@ void MosaicAdapter::on_vehicle_pose_received_handler(const std::array<double, 3>
 
 
 void MosaicAdapter::on_vehicle_twist_received_handler(const std::array<double, 3>& twist) {
-    RCLCPP_INFO(this->get_logger(), 
+    RCLCPP_DEBUG(this->get_logger(), 
             "Received Twist - x: %f, y: %f, z: %f", 
             twist[0], twist[1], twist[2]);
 
@@ -165,7 +165,7 @@ void MosaicAdapter::on_vehicle_twist_received_handler(const std::array<double, 3
 
     twist_msg.header.stamp = this->now();
 
-    RCLCPP_INFO(this->get_logger(), 
+    RCLCPP_DEBUG(this->get_logger(), 
                 "TwistStamped Message - Linear: x=%f, y=%f, z=%f", 
                 twist_msg.twist.linear.x, twist_msg.twist.linear.y, twist_msg.twist.linear.z);
 

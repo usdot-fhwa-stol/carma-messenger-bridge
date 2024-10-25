@@ -20,7 +20,6 @@
 
 MosaicClient::MosaicClient() {
     conn_manager_.onError.connect([this](const boost::system::error_code& err){conn_manager_error_ = err;});
-    conn_manager_.onSent.connect([this](const std::size_t& bytes_sent){bytes_sent_ = bytes_sent;});
 }
 
 MosaicClient::~MosaicClient() {
@@ -95,23 +94,18 @@ bool MosaicClient::send_registration_message(const std::shared_ptr<std::vector<u
             conn_manager_error_.message().c_str(), 
             conn_manager_error_.value()
         );
-    RCLCPP_INFO(
-        rclcpp::get_logger("MosaicClient"),
-        "Sent out package size:(%d)",
-        bytes_sent_
-    );
     return isSent;
 }
 
 bool MosaicClient::send_siren_and_light_message(const std::shared_ptr<std::vector<uint8_t>>& message) {
     bool isSent = conn_manager_.send_message("siren_and_light_status", message);
     if (conn_manager_error_.value())
-    RCLCPP_ERROR(
-        rclcpp::get_logger("MosaicClient"),
-        "Failed to send siren_and_light_status message with error: %s (%d)", 
-        conn_manager_error_.message().c_str(), 
-        conn_manager_error_.value()
-    );
+        RCLCPP_ERROR(
+            rclcpp::get_logger("MosaicClient"),
+            "Failed to send siren_and_light_status message with error: %s (%d)", 
+            conn_manager_error_.message().c_str(), 
+            conn_manager_error_.value()
+        );
     return isSent;
 }
 
@@ -173,13 +167,13 @@ void MosaicClient::received_vehicle_status(const std::shared_ptr<const std::vect
     }
 
     // Log the extracted information
-    RCLCPP_INFO(rclcpp::get_logger("MosaicClient"), 
+    RCLCPP_DEBUG(rclcpp::get_logger("MosaicClient"), 
                 "Received Vehicle Pose: x=%f, y=%f, z=%f", 
                 pose[0], pose[1], pose[2]);
-    RCLCPP_INFO(rclcpp::get_logger("MosaicClient"), 
+    RCLCPP_DEBUG(rclcpp::get_logger("MosaicClient"), 
                 "Received Vehicle Twist: x=%f, y=%f, z=%f", 
                 twist[0], twist[1], twist[2]);
-    RCLCPP_INFO(rclcpp::get_logger("MosaicClient"),
+    RCLCPP_DEBUG(rclcpp::get_logger("MosaicClient"),
                 "Siren Active: %s, Light Active: %s",
                 siren_active ? "true" : "false", light_active ? "true" : "false");
 

@@ -132,7 +132,7 @@ bool ConnectionManager::send_message(const std::string &connection_type, const s
         output_strand_->post([this, socket, endpoint, message]() {
             try {
                 if (socket && socket->is_open()) {
-                    onSent(socket->send_to(boost::asio::buffer(*message), endpoint));
+                    socket->send_to(boost::asio::buffer(*message), endpoint);
                 }
             } catch (const boost::system::system_error& error_code) {
                 onError(error_code.code());
