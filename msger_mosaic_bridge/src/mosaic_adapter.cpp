@@ -33,8 +33,10 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
     this->declare_parameter<bool>("enable_vehicle_status", true);
     this->declare_parameter<int>("registration_port_remote", 6000);
     this->declare_parameter<int>("registration_port_local", 4001);
-    this->declare_parameter<int>("vehicle_status_port_remote", 7000);
+    this->declare_parameter<int>("vehicle_status_port_remote", 7001);
     this->declare_parameter<int>("vehicle_status_port_local", 4002);
+    this->declare_parameter<int>("siren_and_light_status_port_remote", 8001);
+    this->declare_parameter<int>("siren_and_light_status_port_local", 4003);
 
     this->get_parameter("/vehicle_id", config_.vehicle_id);
     this->get_parameter("role_id", config_.role_id);
@@ -47,10 +49,16 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
     config_.registration_port_remote = static_cast<unsigned short>(temp_port);
     this->get_parameter("registration_port_local", temp_port);
     config_.registration_port_local = static_cast<unsigned short>(temp_port);
+
     this->get_parameter("vehicle_status_port_remote", temp_port);
     config_.vehicle_status_port_remote = static_cast<unsigned short>(temp_port);
     this->get_parameter("vehicle_status_port_local", temp_port);
     config_.vehicle_status_port_local = static_cast<unsigned short>(temp_port);
+
+    this->get_parameter("siren_and_light_status_port_remote", temp_port);
+    config_.siren_and_light_status_port_remote = static_cast<unsigned short>(temp_port);
+    this->get_parameter("siren_and_light_status_port_local", temp_port);
+    config_.siren_and_light_status_port_local = static_cast<unsigned short>(temp_port);
 
     // Log all configuration data
     RCLCPP_INFO(this->get_logger(),
@@ -58,23 +66,27 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
                 " - vehicle_id: %s\n"
                 " - role_id: %s\n"
                 " - cdasim_ip_address: %s\n"
-                " - host_ip: %s\n"
+                " - messenger_ip_address: %s\n"
                 " - enable_registration: %s\n"
                 " - enable_vehicle_status: %s\n"
                 " - registration_port_remote: %d\n"
                 " - registration_port_local: %d\n"
                 " - vehicle_status_port_remote: %d\n"
-                " - vehicle_status_port_local: %d",
+                " - vehicle_status_port_local: %d\n"
+                " - siren_and_light_status_port_remote: %d\n"
+                " - siren_and_light_status_port_local: %d\n",
                 config_.vehicle_id.c_str(),
                 config_.role_id.c_str(),
                 config_.cdasim_ip_address.c_str(),
-                "127.0.0.3",  // Replace with correct retrieved value if needed
+                config_.messenger_ip_address.c_str(),
                 config_.enable_registration ? "true" : "false",
                 config_.enable_vehicle_status ? "true" : "false",
                 config_.registration_port_remote,
                 config_.registration_port_local,
                 config_.vehicle_status_port_remote,
-                config_.vehicle_status_port_local);
+                config_.vehicle_status_port_local,
+                config_.siren_and_light_status_port_remote,
+                config_.siren_and_light_status_port_local);
 
     boost::system::error_code ec;
     bool init_successful = mosaic_client_.initialize(config_, ec);

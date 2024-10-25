@@ -79,13 +79,109 @@ TEST_F(MosaicAdapterTest, TestClockPublication) {
     rclcpp::spin_some(mosaic_adapter_node_);
 }
 
+TEST_F(MosaicAdapterTest, TestMsgerReceiveSirenAndLightStatus) {
+    const std::string server_ip = "127.0.0.1";
+    const int server_port = 8001;
+
+    boost::asio::io_context io_context;
+    boost::asio::ip::udp::socket socket(io_context, boost::asio::ip::udp::endpoint(boost::asio::ip::make_address(server_ip), server_port));
+
+    // Prepare a buffer for receiving the status message
+    std::array<char, 1024> recv_buffer;
+    boost::asio::ip::udp::endpoint client_endpoint;
+
+    RCLCPP_INFO(rclcpp::get_logger("MosaicAdapterTest"), "Server waiting for siren and light status message on IP: %s, Port: %d", server_ip.c_str(), server_port);
+
+    // Flags to indicate the status of the message receipt and timeout
+    bool timeout_occurred = false;
+    bool message_received = false;
+
+    // Set up a timer to avoid blocking indefinitely
+    boost::asio::steady_timer timeout_timer(io_context);
+    timeout_timer.expires_after(std::chrono::seconds(2)); // Adjust timeout duration if needed
+    timeout_timer.async_wait([&](const boost::system::error_code& ec) {
+        if (!ec) {
+            RCLCPP_WARN(rclcpp::get_logger("MosaicAdapterTest"), "Server receive timeout reached.");
+            timeout_occurred = true;
+            boost::system::error_code cancel_ec;
+            socket.cancel(cancel_ec); // Cancel pending receive operation to prevent further waiting
+            if (cancel_ec) {
+                RCLCPP_ERROR(rclcpp::get_logger("MosaicAdapterTest"), "Failed to cancel socket operations: %s", cancel_ec.message().c_str());
+            }
+        }
+    });
+
+    // Start the asynchronous receive operation
+    socket.async_receive_from(
+        boost::asio::buffer(recv_buffer), client_endpoint,
+        [&](const boost::system::error_code& ec, std::size_t len) {
+            if (ec == boost::asio::error::operation_aborted) {
+                RCLCPP_WARN(rclcpp::get_logger("MosaicAdapterTest"), "Receive operation was canceled due to timeout or closure.");
+                return;
+            }
+
+            if (!socket.is_open()) {
+                RCLCPP_ERROR(rclcpp::get_logger("MosaicAdapterTest"), "Socket is not open during receive operation.");
+                return;
+            }
+
+            if (!ec && len > 0) {
+                // Extract the received status code
+                uint8_t received_status_code = static_cast<uint8_t>(recv_buffer[0]);
+                RCLCPP_INFO(rclcpp::get_logger("MosaicAdapterTest"), "Server received siren and light status message: %u", received_status_code);
+
+                // Determine the expected status code based on siren and light states
+                bool siren_active = true;
+                bool light_active = true;
+                uint8_t expected_status_code = 0;
+                if (!siren_active && !light_active) {
+                    expected_status_code = SIRENS_AND_LIGHTS_INACTIVE;
+                } else if (siren_active && !light_active) {
+                    expected_status_code = ONLY_SIRENS_ACTIVE;
+                } else if (!siren_active && light_active) {
+                    expected_status_code = ONLY_LIGHTS_ACTIVE;
+                } else if (siren_active && light_active) {
+                    expected_status_code = SIRENS_AND_LIGHTS_ACTIVE;
+                }
+
+                // Verify that the received message matches the expected status code
+                EXPECT_EQ(received_status_code, expected_status_code);
+
+                message_received = true;
+            } else {
+                RCLCPP_ERROR(rclcpp::get_logger("MosaicAdapterTest"), "Error receiving from UDP server: %s", ec.message().c_str());
+            }
+        });
+
+    // Trigger the sending of the siren and light status message
+    bool siren_active = true;
+    bool light_active = true;
+    mosaic_adapter_node_->mosaic_client_.onSirenAndLightStatuReceived(siren_active, light_active);
+
+    // Run the IO context and wait for either the message or the timeout
+    while (!message_received && !timeout_occurred) {
+        io_context.run_one(); // Process one event at a time
+    }
+
+    // Before exiting, close the socket properly
+    if (socket.is_open()) {
+        boost::system::error_code ec;
+        socket.close(ec);
+        if (ec) {
+            RCLCPP_ERROR(rclcpp::get_logger("MosaicAdapterTest"), "Error closing socket: %s", ec.message().c_str());
+        }
+    }
+
+    // Check if the message was received within the timeout period
+    EXPECT_TRUE(message_received);
+}
+
 TEST_F(MosaicAdapterTest, TestServerReceivesHandshakeMessage) {
-    // Setup a UDP server using Boost Asio to listen for the handshake message
-
     // Extract the relevant configuration values from the MosaicAdapter
-    const std::string server_ip = "127.0.0.1"; // Typically, localhost is used for tests.
-    const int server_port = 6000; // Example port - replace with the actual value from your config if different.
+    const std::string server_ip = "127.0.0.1"; 
+    const int server_port = 6000;
 
+    // Create the io_context and a UDP socket bound to the server IP and port
     boost::asio::io_context io_context;
     boost::asio::ip::udp::socket socket(io_context, boost::asio::ip::udp::endpoint(boost::asio::ip::make_address(server_ip), server_port));
     
@@ -95,24 +191,39 @@ TEST_F(MosaicAdapterTest, TestServerReceivesHandshakeMessage) {
 
     RCLCPP_INFO(rclcpp::get_logger("MosaicAdapterTest"), "Server waiting for message on IP: %s, Port: %d", server_ip.c_str(), server_port);
 
-    // Set up a flag to indicate if the timeout has occurred
+    // Flags to indicate the status of the message receipt and timeout
     bool timeout_occurred = false;
     bool message_received = false;
 
     // Set up a timer to avoid blocking indefinitely
     boost::asio::steady_timer timeout_timer(io_context);
-    timeout_timer.expires_after(std::chrono::seconds(2));
+    timeout_timer.expires_after(std::chrono::seconds(2)); // Adjust timeout duration if needed
     timeout_timer.async_wait([&](const boost::system::error_code& ec) {
         if (!ec) {
             RCLCPP_WARN(rclcpp::get_logger("MosaicAdapterTest"), "Server receive timeout reached.");
             timeout_occurred = true;
+            boost::system::error_code cancel_ec;
+            socket.cancel(cancel_ec); // Cancel pending receive operation to prevent further waiting
+            if (cancel_ec) {
+                RCLCPP_ERROR(rclcpp::get_logger("MosaicAdapterTest"), "Failed to cancel socket operations: %s", cancel_ec.message().c_str());
+            }
         }
     });
 
-    // Start the asynchronous receive
+    // Start the asynchronous receive operation
     socket.async_receive_from(
         boost::asio::buffer(recv_buffer), client_endpoint,
         [&](const boost::system::error_code& ec, std::size_t len) {
+            if (ec == boost::asio::error::operation_aborted) {
+                RCLCPP_WARN(rclcpp::get_logger("MosaicAdapterTest"), "Receive operation was canceled due to timeout or closure.");
+                return;
+            }
+
+            if (!socket.is_open()) {
+                RCLCPP_ERROR(rclcpp::get_logger("MosaicAdapterTest"), "Socket is not open during receive operation.");
+                return;
+            }
+
             if (!ec && len > 0) {
                 // Extract the received message as a string
                 std::string received_msg(recv_buffer.data(), len);
@@ -134,12 +245,23 @@ TEST_F(MosaicAdapterTest, TestServerReceivesHandshakeMessage) {
 
     // Run the IO context and wait for either the message or the timeout
     while (!message_received && !timeout_occurred) {
-        io_context.run_one();
+        io_context.run_one(); // Process one event at a time
     }
 
-    // Check if the message was received within the timeout
+    // Before exiting, close the socket properly
+    if (socket.is_open()) {
+        boost::system::error_code ec;
+        socket.close(ec);
+        if (ec) {
+            RCLCPP_ERROR(rclcpp::get_logger("MosaicAdapterTest"), "Error closing socket: %s", ec.message().c_str());
+        }
+    }
+
+    // Check if the message was received within the timeout period
     EXPECT_TRUE(message_received);
 }
+
+
 
 int main(int argc, char **argv) {
     // Initialize Google Test and ROS2

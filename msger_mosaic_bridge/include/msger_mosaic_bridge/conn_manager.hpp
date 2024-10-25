@@ -58,6 +58,7 @@ public:
      */
     bool send_message(const std::string &connection_type, const std::shared_ptr<std::vector<uint8_t>>& message);
     boost::signals2::signal<void(const boost::system::error_code&)> onError;
+    boost::signals2::signal<void(const std::size_t&)> onSent;
 
     /**
      * Closes a specified connection.
@@ -72,6 +73,8 @@ private:
     std::unordered_map<std::string, boost::asio::ip::udp::endpoint> remote_endpoints_;
 
     std::unique_ptr<boost::asio::io_context> io_;
+    std::unique_ptr<boost::asio::executor_work_guard<boost::asio::io_context::executor_type>> work_guard_;
+    std::shared_ptr<std::thread> io_thread_;
     std::unique_ptr<boost::asio::io_context::strand> output_strand_;
 
 };

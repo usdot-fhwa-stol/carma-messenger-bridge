@@ -20,6 +20,7 @@
 
 MosaicClient::MosaicClient() {
     conn_manager_.onError.connect([this](const boost::system::error_code& err){conn_manager_error_ = err;});
+    conn_manager_.onSent.connect([this](const std::size_t& bytes_sent){bytes_sent_ = bytes_sent;});
 }
 
 MosaicClient::~MosaicClient() {
@@ -79,17 +80,25 @@ void MosaicClient::close() {
         RCLCPP_INFO(rclcpp::get_logger("MosaicClient"), "Stopping vehicle_status connection");  
         conn_manager_.close("vehicle_status", vehicle_status_running_);
     }
-        
+    if (siren_and_light_running_){
+        RCLCPP_INFO(rclcpp::get_logger("MosaicClient"), "Stopping siren_and_light_status connection");  
+        conn_manager_.close("siren_and_light_status", siren_and_light_running_);
+    }
 }
 
 bool MosaicClient::send_registration_message(const std::shared_ptr<std::vector<uint8_t>>& message) {
     bool isSent = conn_manager_.send_message("registration", message);
     if (conn_manager_error_.value())
-    RCLCPP_ERROR(
+        RCLCPP_ERROR(
+            rclcpp::get_logger("MosaicClient"),
+            "Failed to send registration message with error: %s (%d)", 
+            conn_manager_error_.message().c_str(), 
+            conn_manager_error_.value()
+        );
+    RCLCPP_INFO(
         rclcpp::get_logger("MosaicClient"),
-        "Failed to send registration message with error: %s (%d)", 
-        conn_manager_error_.message().c_str(), 
-        conn_manager_error_.value()
+        "Sent out package size:(%d)",
+        bytes_sent_
     );
     return isSent;
 }

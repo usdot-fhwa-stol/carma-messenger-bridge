@@ -25,20 +25,20 @@
 struct ConnectionConfig {
     std::string role_id = "";
     std::string vehicle_id = "";
-    bool enable_registration = false;
-    bool enable_vehicle_status = false;
+    bool enable_registration = true;
+    bool enable_vehicle_status = true;
 
     std::string messenger_ip_address = "127.0.0.1";
     std::string cdasim_ip_address = "127.0.0.1"; 
 
-    unsigned short siren_and_light_status_port_remote = 6000;
-    unsigned short siren_and_light_status_port_local = 6000;
-
-    unsigned short registration_port_remote = 6000;
+    unsigned short registration_port_remote = 6001;
     unsigned short registration_port_local = 4001;
 
-    unsigned short vehicle_status_port_remote = 7000;
+    unsigned short vehicle_status_port_remote = 7001;
     unsigned short vehicle_status_port_local = 4002;
+
+    unsigned short siren_and_light_status_port_remote = 8001;
+    unsigned short siren_and_light_status_port_local = 4003;
 };
 
 enum SirensAndLightsStatus : uint8_t
@@ -90,6 +90,7 @@ private:
     std::unique_ptr<std::thread> io_thread_;
     std::unique_ptr<boost::asio::io_context::work> work_;
     boost::system::error_code conn_manager_error_;
+    std::size_t bytes_sent_;
 };
 
 #endif // MOSAIC_CLIENT_HPP
