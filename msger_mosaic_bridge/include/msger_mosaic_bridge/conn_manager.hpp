@@ -14,18 +14,33 @@
  * the License.
 */
 
-
 #ifndef CONN_MANAGER_HPP
 #define CONN_MANAGER_HPP
 
 #include <unordered_map>
 #include <memory>
-#include <string>
 #include <boost/asio.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <functional>
 #include <vector>
 #include "udp_listener.hpp"
+
+enum class ConnectionType {
+    VehicleStatus,
+    TimeSync,
+    TrafficEvent,
+    SirenAndLightStatus,
+    Registration
+};
+
+namespace std {
+    template <>
+    struct hash<ConnectionType> {
+        std::size_t operator()(ConnectionType type) const {
+            return static_cast<std::size_t>(type);
+        }
+    };
+}
 
 class ConnectionManager {
 public:
@@ -33,7 +48,7 @@ public:
 
     /**
      * Establishes a UDP connection.
-     * @param connectionType A string identifier for the connection type (e.g., "vehicle_status").
+     * @param connectionType An enum identifier for the connection type.
      * @param remote_address The IP address of the remote endpoint.
      * @param remote_port The port number of the remote endpoint.
      * @param local_port The port number on the local machine to bind for this connection.
@@ -42,7 +57,7 @@ public:
      * @param is_running A reference to a boolean flag indicating if the connection is active.
      * @return true if the connection was established successfully, otherwise false.
      */
-    bool connect(const std::string &connectionType,
+    bool connect(ConnectionType connectionType,
                  const std::string &remote_address,
                  unsigned short remote_port,
                  unsigned short local_port,
@@ -52,11 +67,11 @@ public:
 
     /**
      * Sends a message via a specific connection type.
-     * @param connection_type The type of connection over which the message will be sent.
+     * @param connection_type The enum type of connection over which the message will be sent.
      * @param message The message data to be sent, encapsulated in a shared pointer to a vector of bytes.
      * @return true if the message was sent successfully, false otherwise.
      */
-    bool send_message(const std::string &connection_type, const std::shared_ptr<std::vector<uint8_t>>& message);
+    bool send_message(ConnectionType connection_type, const std::shared_ptr<std::vector<uint8_t>>& message);
     boost::signals2::signal<void(const boost::system::error_code&)> onError;
 
     /**
@@ -64,18 +79,17 @@ public:
      * @param connection_type The identifier of the connection to close.
      * @param is_running Reference to a boolean that indicates the connection's active state, set to false on close.
      */
-    void close(const std::string &connection_type, bool &is_running);
+    void close(ConnectionType connection_type, bool &is_running);
 
 private:
-    std::unordered_map<std::string, std::unique_ptr<cav::UDPListener>> listeners_;
-    std::unordered_map<std::string, std::unique_ptr<boost::asio::ip::udp::socket>> sockets_;
-    std::unordered_map<std::string, boost::asio::ip::udp::endpoint> remote_endpoints_;
+    std::unordered_map<ConnectionType, std::unique_ptr<cav::UDPListener>> listeners_;
+    std::unordered_map<ConnectionType, std::unique_ptr<boost::asio::ip::udp::socket>> sockets_;
+    std::unordered_map<ConnectionType, boost::asio::ip::udp::endpoint> remote_endpoints_;
 
     std::unique_ptr<boost::asio::io_context> io_;
     std::unique_ptr<boost::asio::executor_work_guard<boost::asio::io_context::executor_type>> work_guard_;
     std::shared_ptr<std::thread> io_thread_;
     std::unique_ptr<boost::asio::io_context::strand> output_strand_;
-
 };
 
 #endif // CONN_MANAGER_HPP

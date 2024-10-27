@@ -196,7 +196,7 @@ TEST_F(MosaicAdapterTest, TestMosaicReceivesHandshakeMessage) {
 
     // Extract the relevant configuration values from the MosaicAdapter
     const std::string server_ip = "127.0.0.1"; 
-    const int server_port = 6000;
+    const int server_port = 6001;
 
     // Create the io_context and a UDP socket bound to the server IP and port
     boost::asio::io_context io_context;

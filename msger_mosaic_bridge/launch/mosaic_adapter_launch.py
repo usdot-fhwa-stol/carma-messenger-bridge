@@ -26,12 +26,11 @@ def generate_launch_description():
                 {'host_ip': '127.0.0.1'},
                 {'enable_registration': True},
                 {'enable_vehicle_status': True},
-                {'registration_port_remote': 6001},
                 {'registration_port_local': 4001},
-                {'vehicle_status_port_remote': 7001},
                 {'vehicle_status_port_local': 4002},
-                {'siren_and_light_status_port_remote': 8001},
-                {'siren_and_light_status_port_local': 4003}
+                {'traffic_event_port_local': 4003},
+                {'registration_port_remote': 6001},
+                {'siren_and_light_status_port_remote': 8001}               
                 
             ],
             remappings=[

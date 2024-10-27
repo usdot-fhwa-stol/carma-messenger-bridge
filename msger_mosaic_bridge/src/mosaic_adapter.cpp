@@ -31,12 +31,11 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
     this->declare_parameter<std::string>("host_ip", "127.0.0.1");
     this->declare_parameter<bool>("enable_registration", true);
     this->declare_parameter<bool>("enable_vehicle_status", true);
-    this->declare_parameter<int>("registration_port_remote", 6000);
     this->declare_parameter<int>("registration_port_local", 4001);
-    this->declare_parameter<int>("vehicle_status_port_remote", 7001);
     this->declare_parameter<int>("vehicle_status_port_local", 4002);
+    this->declare_parameter<int>("traffic_event_port_local", 4003);
+    this->declare_parameter<int>("registration_port_remote", 6001);
     this->declare_parameter<int>("siren_and_light_status_port_remote", 8001);
-    this->declare_parameter<int>("siren_and_light_status_port_local", 4003);
 
     this->get_parameter("/vehicle_id", config_.vehicle_id);
     this->get_parameter("role_id", config_.role_id);
@@ -49,44 +48,27 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
     config_.registration_port_remote = static_cast<unsigned short>(temp_port);
     this->get_parameter("registration_port_local", temp_port);
     config_.registration_port_local = static_cast<unsigned short>(temp_port);
-
-    this->get_parameter("vehicle_status_port_remote", temp_port);
-    config_.vehicle_status_port_remote = static_cast<unsigned short>(temp_port);
     this->get_parameter("vehicle_status_port_local", temp_port);
     config_.vehicle_status_port_local = static_cast<unsigned short>(temp_port);
-
     this->get_parameter("siren_and_light_status_port_remote", temp_port);
     config_.siren_and_light_status_port_remote = static_cast<unsigned short>(temp_port);
-    this->get_parameter("siren_and_light_status_port_local", temp_port);
-    config_.siren_and_light_status_port_local = static_cast<unsigned short>(temp_port);
+    this->get_parameter("traffic_event_port_local", temp_port);
+    config_.traffic_event_port_local = static_cast<unsigned short>(temp_port);
 
     // Log all configuration data
-    RCLCPP_INFO(this->get_logger(),
-                "MosaicAdapter Configuration:\n"
-                " - vehicle_id: %s\n"
-                " - role_id: %s\n"
-                " - cdasim_ip_address: %s\n"
-                " - messenger_ip_address: %s\n"
-                " - enable_registration: %s\n"
-                " - enable_vehicle_status: %s\n"
-                " - registration_port_remote: %d\n"
-                " - registration_port_local: %d\n"
-                " - vehicle_status_port_remote: %d\n"
-                " - vehicle_status_port_local: %d\n"
-                " - siren_and_light_status_port_remote: %d\n"
-                " - siren_and_light_status_port_local: %d\n",
-                config_.vehicle_id.c_str(),
-                config_.role_id.c_str(),
-                config_.cdasim_ip_address.c_str(),
-                config_.messenger_ip_address.c_str(),
-                config_.enable_registration ? "true" : "false",
-                config_.enable_vehicle_status ? "true" : "false",
-                config_.registration_port_remote,
-                config_.registration_port_local,
-                config_.vehicle_status_port_remote,
-                config_.vehicle_status_port_local,
-                config_.siren_and_light_status_port_remote,
-                config_.siren_and_light_status_port_local);
+    RCLCPP_INFO(this->get_logger(), "MosaicAdapter Configuration:");
+    RCLCPP_INFO(this->get_logger(), " - vehicle_id: %s", config_.vehicle_id.c_str());
+    RCLCPP_INFO(this->get_logger(), " - role_id: %s", config_.role_id.c_str());
+    RCLCPP_INFO(this->get_logger(), " - cdasim_ip_address: %s", config_.cdasim_ip_address.c_str());
+    RCLCPP_INFO(this->get_logger(), " - messenger_ip_address: %s", config_.messenger_ip_address.c_str());
+    RCLCPP_INFO(this->get_logger(), " - enable_registration: %s", config_.enable_registration ? "true" : "false");
+    RCLCPP_INFO(this->get_logger(), " - enable_vehicle_status: %s", config_.enable_vehicle_status ? "true" : "false");
+    RCLCPP_INFO(this->get_logger(), " - registration_port_remote: %d", config_.registration_port_remote);
+    RCLCPP_INFO(this->get_logger(), " - registration_port_local: %d", config_.registration_port_local);
+    RCLCPP_INFO(this->get_logger(), " - vehicle_status_port_local: %d", config_.vehicle_status_port_local);
+    RCLCPP_INFO(this->get_logger(), " - siren_and_light_status_port_remote: %d", config_.siren_and_light_status_port_remote);
+    RCLCPP_INFO(this->get_logger(), " - traffic_event_port_local: %d", config_.traffic_event_port_local);
+
 
     boost::system::error_code ec;
     bool init_successful = mosaic_client_.initialize(config_, ec);
@@ -123,7 +105,8 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
 
 void MosaicAdapter::initialize(){
     std::string handshake_msg = compose_handshake_msg(config_.role_id, 
-                                                      config_.vehicle_status_port_local, 
+                                                      config_.vehicle_status_port_local,
+                                                      config_.traffic_event_port_local,
                                                       config_.registration_port_local, 
                                                       config_.cdasim_ip_address);
     broadcast_handshake_msg(handshake_msg);
@@ -210,41 +193,46 @@ void MosaicAdapter::on_siren_and_light_status_recieved_handler(bool siren_active
 
 
 std::string MosaicAdapter::compose_handshake_msg(const std::string& role_id, 
-                                                 int veh_status_port, 
-                                                 int time_port, 
-                                                 const std::string& ip)
+                            int veh_status_port, 
+                            int traffic_event_port, 
+                            int time_port, 
+                            const std::string& ip)
 {
-    // document is the root of a json message
-	rapidjson::Document document;
+    // document is the root of a JSON message
+    rapidjson::Document document;
 
-	// define the document as an object rather than an array
-	document.SetObject();
+    // define the document as an object rather than an array
+    document.SetObject();
 
-	// create a rapidjson array type with similar syntax to std::vector
-	rapidjson::Value array(rapidjson::kArrayType);
+    // create a rapidjson array type with similar syntax to std::vector
+    rapidjson::Value array(rapidjson::kArrayType);
 
-	// must pass an allocator when the object may need to allocate memory
-	rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
+    // must pass an allocator when the object may need to allocate memory
+    rapidjson::Document::AllocatorType& allocator = document.GetAllocator();
 
     rapidjson::Value roletextPart;
-	roletextPart.SetString(role_id.c_str(), allocator);
+    roletextPart.SetString(role_id.c_str(), allocator);
     document.AddMember("sumoVehicleRole", roletextPart, allocator);
 
     rapidjson::Value iptextPart;
-	iptextPart.SetString(ip.c_str(), allocator);
+    iptextPart.SetString(ip.c_str(), allocator);
     document.AddMember("rxIpAddress", iptextPart, allocator);
 
-    rapidjson::Value porttextPart;
-	porttextPart.SetInt(veh_status_port);
-    document.AddMember("rxVehicleStatusPort", porttextPart, allocator);
+    rapidjson::Value vehicleStatusPortPart;
+    vehicleStatusPortPart.SetInt(veh_status_port);
+    document.AddMember("rxVehicleStatusPort", vehicleStatusPortPart, allocator);
 
-    rapidjson::Value portTimePart;
-	portTimePart.SetInt(time_port);
-    document.AddMember("rxTimeSyncPort", portTimePart, allocator);
+    rapidjson::Value timeSyncPortPart;
+    timeSyncPortPart.SetInt(time_port);
+    document.AddMember("rxTimeSyncPort", timeSyncPortPart, allocator);
+
+    rapidjson::Value trafficEventPortPart;
+    trafficEventPortPart.SetInt(traffic_event_port);
+    document.AddMember("rxTrafficEventPort", trafficEventPortPart, allocator);
 
     rapidjson::StringBuffer strbuf;
-	rapidjson::Writer<rapidjson::StringBuffer> writer(strbuf);
-	document.Accept(writer);
+    rapidjson::Writer<rapidjson::StringBuffer> writer(strbuf);
+    document.Accept(writer);
 
     std::string strbufstring = strbuf.GetString();
 
@@ -261,6 +249,7 @@ void MosaicAdapter::broadcast_handshake_msg(const std::string& msg_string)
     RCLCPP_DEBUG(this->get_logger(), "ip_address: %s", config_.cdasim_ip_address.c_str());
     RCLCPP_DEBUG(this->get_logger(), "registration_port_local: %d", config_.registration_port_local);
     RCLCPP_DEBUG(this->get_logger(), "vehicle_status_port_local: %d", config_.vehicle_status_port_local);
+    RCLCPP_DEBUG(this->get_logger(), "traffic_event_port_local: %d", config_.traffic_event_port_local);
 
     if (!success) {
         RCLCPP_WARN(this->get_logger(), "Handshake Message send failed");

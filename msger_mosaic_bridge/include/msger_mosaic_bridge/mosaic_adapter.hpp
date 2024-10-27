@@ -47,7 +47,7 @@ private:
     
     // Utility method to compose a JSON-formatted handshake message that is used to establish initial communication with the
     // network server. This message includes necessary configuration details such as role ID and IP addresses.
-    std::string compose_handshake_msg(const std::string& role_id, int veh_status_port, int time_port, const std::string& ip);
+    std::string compose_handshake_msg(const std::string& role_id, int veh_status_port, int traffic_event_port, int time_port, const std::string& ip);
     
     // Sends the handshake message to the network server to initiate communication. This is crucial for setting up the network
     // configuration and ensuring that the server is aware of the client's presence and ready to exchange data.

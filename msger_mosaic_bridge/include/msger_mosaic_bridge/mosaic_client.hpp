@@ -31,23 +31,28 @@ struct ConnectionConfig {
     std::string messenger_ip_address = "127.0.0.1";
     std::string cdasim_ip_address = "127.0.0.1"; 
 
+    // port for messenger-mosaic bridge to coonect with mosaic (messenger-mosaic bridge -> mosaic)
     unsigned short registration_port_remote = 6001;
+    // port for mosaic to coonect with messenger-mosaic bridge (mosaic -> messenger-mosaic bridge)
     unsigned short registration_port_local = 4001;
 
-    unsigned short vehicle_status_port_remote = 7001;
+    // port for mosaic to coonect with messenger-mosaic bridge (mosaic -> messenger-mosaic bridge)
     unsigned short vehicle_status_port_local = 4002;
 
+    // port for messenger-mosaic bridge to coonect with carma-messenger (messenger-mosaic bridge -> carma-messenger)
     unsigned short siren_and_light_status_port_remote = 8001;
-    unsigned short siren_and_light_status_port_local = 4003;
+
+    // port for mosaic to coonect with messenger-mosaic bridge (mosaic -> messenger-mosaic bridge)
+    unsigned short traffic_event_port_local = 4003;
 };
 
 enum SirensAndLightsStatus : uint8_t
-  {
-    SIRENS_AND_LIGHTS_INACTIVE = 49,  // Value of char '1'
-    ONLY_SIRENS_ACTIVE = 50,          // Value of char '2'
-    ONLY_LIGHTS_ACTIVE = 51,          // Value of char '3'
-    SIRENS_AND_LIGHTS_ACTIVE = 52     // Value of char '4'
-  };
+{
+  SIRENS_AND_LIGHTS_INACTIVE = 49,  // Value of char '1'
+  ONLY_SIRENS_ACTIVE = 50,          // Value of char '2'
+  ONLY_LIGHTS_ACTIVE = 51,          // Value of char '3'
+  SIRENS_AND_LIGHTS_ACTIVE = 52     // Value of char '4'
+};
 
 class MosaicClient {
 public:
@@ -76,6 +81,7 @@ public:
     boost::signals2::signal<void(const std::array<double, 3>&)> onVehPoseReceived;
     boost::signals2::signal<void(const std::array<double, 3>&)> onVehTwistReceived;
     boost::signals2::signal<void(bool siren_active, bool light_active)> onSirenAndLightStatuReceived;
+    
 
 
 private:
@@ -86,6 +92,7 @@ private:
     bool vehicle_status_running_ = false;
     bool registration_running_ = false;
     bool siren_and_light_running_ = false;
+    bool traffic_event_running_ = false;
     std::unique_ptr<boost::asio::io_context> io_;
     std::unique_ptr<std::thread> io_thread_;
     std::unique_ptr<boost::asio::io_context::work> work_;

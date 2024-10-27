@@ -31,40 +31,40 @@ MosaicClient::~MosaicClient() {
 bool MosaicClient::initialize(const ConnectionConfig& config, boost::system::error_code &ec) {
     bool all_connected = true;
 
-    if (config.enable_registration) {
-        all_connected &= conn_manager_.connect("registration", 
-                                               config.cdasim_ip_address, 
-                                               config.registration_port_remote, 
-                                               config.registration_port_local,
-                                               [this](const std::shared_ptr<const std::vector<uint8_t>>& data) { this->received_time(data); }, 
-                                               ec, 
-                                               registration_running_);
-        if (all_connected)
-            RCLCPP_INFO(rclcpp::get_logger("MosaicClient"), "registration connection initialized successfully.");
-    }
+    all_connected &= conn_manager_.connect(ConnectionType::Registration, 
+                                            config.cdasim_ip_address, 
+                                            config.registration_port_remote, 
+                                            config.registration_port_local,
+                                            [this](const std::shared_ptr<const std::vector<uint8_t>>& data) { this->received_time(data); }, 
+                                            ec, 
+                                            registration_running_);
 
-    if (config.enable_vehicle_status) {
-        all_connected &= conn_manager_.connect("vehicle_status", 
-                                               config.cdasim_ip_address, 
-                                               config.vehicle_status_port_remote, 
-                                               config.vehicle_status_port_local,
-                                               [this](const std::shared_ptr<const std::vector<uint8_t>>& data) { this->received_vehicle_status(data); }, 
-                                               ec, 
-                                               vehicle_status_running_);
-        if (all_connected)
-            RCLCPP_INFO(rclcpp::get_logger("MosaicClient"), "vehicle_status connection initialized successfully.");        
+    all_connected &= conn_manager_.connect(ConnectionType::VehicleStatus, 
+                                            config.cdasim_ip_address, 
+                                            0, 
+                                            config.vehicle_status_port_local,
+                                            [this](const std::shared_ptr<const std::vector<uint8_t>>& data) { this->received_vehicle_status(data); }, 
+                                            ec, 
+                                            vehicle_status_running_);
+                                            
+    all_connected &= conn_manager_.connect(ConnectionType::SirenAndLightStatus, 
+                                            config.messenger_ip_address, 
+                                            config.siren_and_light_status_port_remote, 
+                                            0,
+                                            nullptr, //no need a listener
+                                            ec, 
+                                            siren_and_light_running_);
+    all_connected &= conn_manager_.connect(ConnectionType::TrafficEvent,
+                                            config.cdasim_ip_address,
+                                            0,
+                                            config.traffic_event_port_local,
+                                            [this](const std::shared_ptr<const std::vector<uint8_t>>& data) { this->received_vehicle_status(data); }, 
+                                            ec,
+                                            traffic_event_running_);
+    if (all_connected)
+        RCLCPP_INFO(rclcpp::get_logger("MosaicClient"), "siren_and_light_status connection initialized successfully.");      
 
-        all_connected &= conn_manager_.connect("siren_and_light_status", 
-                                               config.messenger_ip_address, 
-                                               config.siren_and_light_status_port_remote, 
-                                               config.siren_and_light_status_port_local,
-                                               nullptr, //no need a listener
-                                               ec, 
-                                               siren_and_light_running_);
-        if (all_connected)
-            RCLCPP_INFO(rclcpp::get_logger("MosaicClient"), "siren_and_light_status connection initialized successfully.");      
-
-    }
+    
 
     return all_connected;
 }
@@ -72,21 +72,21 @@ bool MosaicClient::initialize(const ConnectionConfig& config, boost::system::err
 void MosaicClient::close() {
     if (registration_running_){
         RCLCPP_INFO(rclcpp::get_logger("MosaicClient"), "Stopping registration connection");  
-        conn_manager_.close("registration", registration_running_);
+        conn_manager_.close(ConnectionType::Registration, registration_running_);
     }
         
     if (vehicle_status_running_){
         RCLCPP_INFO(rclcpp::get_logger("MosaicClient"), "Stopping vehicle_status connection");  
-        conn_manager_.close("vehicle_status", vehicle_status_running_);
+        conn_manager_.close(ConnectionType::VehicleStatus, vehicle_status_running_);
     }
     if (siren_and_light_running_){
         RCLCPP_INFO(rclcpp::get_logger("MosaicClient"), "Stopping siren_and_light_status connection");  
-        conn_manager_.close("siren_and_light_status", siren_and_light_running_);
+        conn_manager_.close(ConnectionType::SirenAndLightStatus, siren_and_light_running_);
     }
 }
 
 bool MosaicClient::send_registration_message(const std::shared_ptr<std::vector<uint8_t>>& message) {
-    bool isSent = conn_manager_.send_message("registration", message);
+    bool isSent = conn_manager_.send_message(ConnectionType::Registration, message);
     if (conn_manager_error_.value())
         RCLCPP_ERROR(
             rclcpp::get_logger("MosaicClient"),
@@ -98,7 +98,7 @@ bool MosaicClient::send_registration_message(const std::shared_ptr<std::vector<u
 }
 
 bool MosaicClient::send_siren_and_light_message(const std::shared_ptr<std::vector<uint8_t>>& message) {
-    bool isSent = conn_manager_.send_message("siren_and_light_status", message);
+    bool isSent = conn_manager_.send_message(ConnectionType::SirenAndLightStatus, message);
     if (conn_manager_error_.value())
         RCLCPP_ERROR(
             rclcpp::get_logger("MosaicClient"),
