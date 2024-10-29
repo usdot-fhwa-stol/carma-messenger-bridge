@@ -25,14 +25,25 @@
 #include <vector>
 #include "udp_listener.hpp"
 
+// Enum representing different connection types.
+// Note: The values are explicitly defined and should be kept sequential 
+// to maintain consistency and avoid hashing issues. 
+// When adding new values, continue numbering sequentially as example shown below.
 enum class ConnectionType {
-    VehicleStatus,
-    TimeSync,
-    TrafficEvent,
-    SirenAndLightStatus,
-    Registration
+    VehicleStatus = 0,
+    TimeSync = 1,
+    TrafficEvent = 2,
+    SirenAndLightStatus = 3,
+    Registration = 4
+    // Continue numbering sequentially for new entries:
+    // NewEnumType = 5, // Example
 };
 
+// Specialization of std::hash for ConnectionType enum.
+// This hash function casts the enum value to its underlying size_t type.
+// Note: This works under the assumption that the enum values are sequentially numbered 
+// and unique. If non-sequential or custom values are used, consider updating the hash function 
+// to avoid collisions or gaps in hash distribution.
 namespace std {
     template <>
     struct hash<ConnectionType> {
