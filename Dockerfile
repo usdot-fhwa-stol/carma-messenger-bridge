@@ -15,7 +15,7 @@
 ARG DOCKER_ORG="usdotfhwastoldev"
 ARG DOCKER_TAG="develop-humble"
 FROM ${DOCKER_ORG}/carma-base:${DOCKER_TAG}
-ARG GIT_BRANCH="develop"
+ENV GIT_BRANCH="develop"
 USER carma
 WORKDIR /home/carma
 COPY --chown=carma /docker ./docker

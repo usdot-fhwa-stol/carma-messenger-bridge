@@ -17,7 +17,26 @@
 echo "Sourcing base image for full build..."
 source /opt/ros/humble/setup.bash
 
-echo "Building msger_mosaic_bridge using ROS2 humble"
+mkdir -p ~/msgs && cd ~/msgs
+git clone --depth 1 --single-branch -b ${GIT_BRANCH} https://github.com/usdot-fhwa-stol/carma-msgs.git
+
+# Copy the necessary part for the carma-messenger
+mkdir -p ~/carma-msgs && cd ~/carma-msgs
+cp -r ~/msgs/carma-msgs/carma_cmake_common/ .
+cp -r ~/msgs/carma-msgs/carma_msgs/ .
+
+# Remove the carma_msgs since not necessary to build all of them
+cd ~/ && sudo rm -r msgs
+
+echo "Building carma_cmake_common"
+colcon build --packages-select carma_cmake_common
+
+echo "Building carma_msgs"
+colcon build --packages-select carma_msgs
+
+source install/setup.bash
+
+echo "Building msger_mosaic_bridge"
 colcon build --packages-select msger_mosaic_bridge --cmake-clean-cache 
 
 echo "Build ROS2 msger_mosaic_bridge successfully"
