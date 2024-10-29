@@ -109,6 +109,55 @@ bool MosaicClient::send_siren_and_light_message(const std::shared_ptr<std::vecto
     return isSent;
 }
 
+void MosaicClient::received_traffic_event(const std::shared_ptr<const std::vector<uint8_t>>& data) {
+        // Convert data to JSON string
+        std::string json_string(data->begin(), data->end());
+
+        // Parse the JSON
+        rapidjson::Document received_json;
+        if (received_json.Parse(json_string.c_str()).HasParseError()) {
+            RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Failed to parse JSON: %s", json_string.c_str());
+            return;
+        }
+
+        double up_track = 0.0;
+        double down_track = 0.0;
+        double minimum_gap = 0.0;
+        double advisory_speed = 0.0;
+
+        // Extract the values
+        if (received_json.HasMember("up_track") && received_json["up_track"].IsNumber()) {
+            up_track = received_json["up_track"].GetDouble();
+        } else {
+            RCLCPP_WARN(rclcpp::get_logger("MosaicClient"), "Missing or invalid 'up_track' in JSON");
+        }
+
+        if (received_json.HasMember("down_track") && received_json["down_track"].IsNumber()) {
+            down_track = received_json["down_track"].GetDouble();
+        } else {
+            RCLCPP_WARN(rclcpp::get_logger("MosaicClient"), "Missing or invalid 'down_track' in JSON");
+        }
+
+        if (received_json.HasMember("minimum_gap") && received_json["minimum_gap"].IsNumber()) {
+            minimum_gap = received_json["minimum_gap"].GetDouble();
+        } else {
+            RCLCPP_WARN(rclcpp::get_logger("MosaicClient"), "Missing or invalid 'minimum_gap' in JSON");
+        }
+
+        if (received_json.HasMember("advisory_speed") && received_json["advisory_speed"].IsNumber()) {
+            advisory_speed = received_json["advisory_speed"].GetDouble();
+        } else {
+            RCLCPP_WARN(rclcpp::get_logger("MosaicClient"), "Missing or invalid 'advisory_speed' in JSON");
+        }
+
+        // Log the extracted information
+        RCLCPP_DEBUG(rclcpp::get_logger("MosaicClient"), 
+                    "Received Traffic Event - Up Track: %f, Down Track: %f, Minimum Gap: %f, Advisory Speed: %f", 
+                    up_track, down_track, minimum_gap, advisory_speed);
+
+        onTrafficEventReceived(up_track, down_track, minimum_gap, advisory_speed);
+}
+
 void MosaicClient::received_vehicle_status(const std::shared_ptr<const std::vector<uint8_t>>& data) {
 
     std::string json_string(data->begin(), data->end());

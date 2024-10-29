@@ -19,6 +19,7 @@
 #include "gps_msgs/msg/gps_fix.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "rosgraph_msgs/msg/clock.hpp"
+#include "carma_msgs/srv/set_traffic_event.hpp"
 #include <rapidjson/document.h>
 
 // The MosaicAdapter class adapts the MosaicClient for use within a ROS2 environment, facilitating the communication between
@@ -44,6 +45,8 @@ private:
     void on_time_received_handler(unsigned long timestamp);
 
     void on_siren_and_light_status_recieved_handler(bool siren_active, bool light_active);
+
+    void on_traffic_event_received_handler(float up_track, float down_track, float minimum_gap, float advisory_speed);
     
     // Utility method to compose a JSON-formatted handshake message that is used to establish initial communication with the
     // network server. This message includes necessary configuration details such as role ID and IP addresses.
@@ -56,6 +59,7 @@ private:
     rclcpp::Publisher<gps_msgs::msg::GPSFix>::SharedPtr gps_pub_;
     rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_pub_;
     rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr time_pub_;
+    rclcpp::Client<carma_msgs::srv::SetTrafficEvent>::SharedPtr traffic_event_client_;
 
     boost::system::error_code client_error_;
     ConnectionConfig config_;

@@ -14,12 +14,14 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(gps_msgs REQUIRED)
+find_package(carma_msgs REQUIRED)
 find_package(ament_cmake_gtest REQUIRED) # Add support for Google Test
 
 # Include directories
 include_directories(
   include/${PROJECT_NAME}
   ${CMAKE_SOURCE_DIR}/thirdparty/rapidjson/include
+  ${ament_index_build_path}/carma_msgs/include  
 )
 
 # Create a library from shared source files
@@ -34,6 +36,7 @@ ament_target_dependencies(msger_mosaic_bridge_lib
   rclcpp
   gps_msgs
   geometry_msgs
+  carma_msgs
 )
 
 # Declare a C++ executable using the shared library

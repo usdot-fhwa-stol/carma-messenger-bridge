@@ -81,12 +81,12 @@ public:
     boost::signals2::signal<void(const std::array<double, 3>&)> onVehPoseReceived;
     boost::signals2::signal<void(const std::array<double, 3>&)> onVehTwistReceived;
     boost::signals2::signal<void(bool siren_active, bool light_active)> onSirenAndLightStatuReceived;
-    
-
+    boost::signals2::signal<void(float up_track, float down_track, float minimum_gap, float advisory_speed)> onTrafficEventReceived;
 
 private:
     void received_vehicle_status(const std::shared_ptr<const std::vector<uint8_t>>& data);
     void received_time(const std::shared_ptr<const std::vector<uint8_t>>& data);
+    void received_traffic_event(const std::shared_ptr<const std::vector<uint8_t>>& data);
 
     ConnectionManager conn_manager_;
     bool vehicle_status_running_ = false;

@@ -88,6 +88,8 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
     gps_pub_ = this->create_publisher<gps_msgs::msg::GPSFix>("vehicle_pose", 10);
     twist_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>("velocity", 10);
     time_pub_ = this->create_publisher<rosgraph_msgs::msg::Clock>("/sim_clock", 10);
+    traffic_event_client_ = this->create_client<carma_msgs::srv::SetTrafficEvent>("set_traffic_event");
+
 
     mosaic_client_.onTimeReceived.connect([this](unsigned long timestamp) {this->on_time_received_handler(timestamp); });
     mosaic_client_.onVehPoseReceived.connect([this](const std::array<double, 3>& pose) {
@@ -98,6 +100,9 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
     });
     mosaic_client_.onSirenAndLightStatuReceived.connect([this](bool siren_active, bool light_active){
         this->on_siren_and_light_status_recieved_handler(siren_active, light_active);
+    });
+    mosaic_client_.onTrafficEventReceived.connect([this](float up_track, float down_track, float minimum_gap, float advisory_speed){
+        this->on_traffic_event_received_handler(up_track, down_track, minimum_gap, advisory_speed);
     });
 
 
@@ -191,6 +196,28 @@ void MosaicAdapter::on_siren_and_light_status_recieved_handler(bool siren_active
     mosaic_client_.send_siren_and_light_message(message);
 }
 
+void MosaicAdapter::on_traffic_event_received_handler(float up_track, float down_track, float minimum_gap, float advisory_speed)
+{
+    auto request = std::make_shared<carma_msgs::srv::SetTrafficEvent::Request>();
+    request->up_track = up_track;
+    request->down_track = down_track;
+    request->minimum_gap = minimum_gap;
+    request->advisory_speed = advisory_speed;
+
+    auto future_result = traffic_event_client_->async_send_request(request, 
+        [this](rclcpp::Client<carma_msgs::srv::SetTrafficEvent>::SharedFuture future) {
+            // Handle the response from the service
+            auto response = future.get();
+            if (response->success)
+            {
+                RCLCPP_INFO(this->get_logger(), "Traffic event set successfully.");
+            }
+            else
+            {
+                RCLCPP_ERROR(this->get_logger(), "Failed to set traffic event.");
+            }
+    });
+}
 
 std::string MosaicAdapter::compose_handshake_msg(const std::string& role_id, 
                             int veh_status_port, 
