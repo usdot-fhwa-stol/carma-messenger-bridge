@@ -20,6 +20,7 @@
 #include "gps_msgs/msg/gps_fix.hpp"
 #include "geometry_msgs/msg/twist_stamped.hpp"
 #include "rosgraph_msgs/msg/clock.hpp"
+#include "carma_msgs/srv/set_traffic_event.hpp"
 #include <boost/asio.hpp>
 #include <thread>
 #include <future>
@@ -36,7 +37,25 @@ protected:
     std::shared_ptr<MosaicAdapter> mosaic_adapter_node_;
 };
 
-// Test GPSFix publication when onVehPoseReceived is triggered
+TEST_F(MosaicAdapterTest, TestTrafficEventService) {
+    auto traffic_event_service = mosaic_adapter_node_->create_service<carma_msgs::srv::SetTrafficEvent>(
+        "set_traffic_event", 
+        [this](const std::shared_ptr<carma_msgs::srv::SetTrafficEvent::Request> request,
+               std::shared_ptr<carma_msgs::srv::SetTrafficEvent::Response> response) {
+            EXPECT_DOUBLE_EQ(request->up_track, 10.0);
+            EXPECT_DOUBLE_EQ(request->down_track, 20.0);
+            EXPECT_DOUBLE_EQ(request->minimum_gap, 5.0);
+            EXPECT_DOUBLE_EQ(request->advisory_speed, 30.0);
+
+            response->success = true;
+        });
+
+    mosaic_adapter_node_->mosaic_client_.onTrafficEventReceived(10.0, 20.0, 5.0, 30.0);
+
+    rclcpp::sleep_for(std::chrono::milliseconds(100));
+    rclcpp::spin_some(mosaic_adapter_node_);
+}
+
 TEST_F(MosaicAdapterTest, TestGPSFixPublication) {
     // Create a subscriber to the "vehicle_pose" topic
     auto gps_subscriber = mosaic_adapter_node_->create_subscription<gps_msgs::msg::GPSFix>(
@@ -56,7 +75,6 @@ TEST_F(MosaicAdapterTest, TestGPSFixPublication) {
     rclcpp::spin_some(mosaic_adapter_node_);
 }
 
-// Test TwistStamped publication when onVehTwistReceived is triggered
 TEST_F(MosaicAdapterTest, TestTwistStampedPublication) {
     // Create a subscriber to the "velocity" topic
     auto twist_subscriber = mosaic_adapter_node_->create_subscription<geometry_msgs::msg::TwistStamped>(
@@ -76,7 +94,6 @@ TEST_F(MosaicAdapterTest, TestTwistStampedPublication) {
     rclcpp::spin_some(mosaic_adapter_node_);
 }
 
-// Test Clock publication when onTimeReceived is triggered
 TEST_F(MosaicAdapterTest, TestClockPublication) {
     // Create a subscriber to the "/sim_clock" topic
     auto clock_subscriber = mosaic_adapter_node_->create_subscription<rosgraph_msgs::msg::Clock>(
@@ -277,8 +294,6 @@ TEST_F(MosaicAdapterTest, TestMosaicReceivesHandshakeMessage) {
     // Check if the message was received within the timeout period
     EXPECT_TRUE(message_received);
 }
-
-
 
 int main(int argc, char **argv) {
     // Initialize Google Test and ROS2
