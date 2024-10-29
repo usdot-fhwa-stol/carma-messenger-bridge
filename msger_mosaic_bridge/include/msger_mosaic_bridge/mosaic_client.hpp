@@ -31,18 +31,19 @@ struct ConnectionConfig {
     std::string messenger_ip_address = "127.0.0.1";
     std::string cdasim_ip_address = "127.0.0.1"; 
 
-    // port for messenger-mosaic bridge to coonect with mosaic (messenger-mosaic bridge -> mosaic)
+    // port for messenger-mosaic bridge to connect with mosaic (messenger-mosaic bridge -> mosaic)
     unsigned short registration_port_remote = 6001;
-    // port for mosaic to coonect with messenger-mosaic bridge (mosaic -> messenger-mosaic bridge)
+    
+    // port for mosaic to connect with messenger-mosaic bridge (mosaic -> messenger-mosaic bridge)
     unsigned short registration_port_local = 4001;
 
-    // port for mosaic to coonect with messenger-mosaic bridge (mosaic -> messenger-mosaic bridge)
+    // port for mosaic to connect with messenger-mosaic bridge (mosaic -> messenger-mosaic bridge)
     unsigned short vehicle_status_port_local = 4002;
 
-    // port for messenger-mosaic bridge to coonect with carma-messenger (messenger-mosaic bridge -> carma-messenger)
+    // port for messenger-mosaic bridge to connect with carma-messenger (messenger-mosaic bridge -> carma-messenger)
     unsigned short siren_and_light_status_port_remote = 8001;
 
-    // port for mosaic to coonect with messenger-mosaic bridge (mosaic -> messenger-mosaic bridge)
+    // port for mosaic to connect with messenger-mosaic bridge (mosaic -> messenger-mosaic bridge)
     unsigned short traffic_event_port_local = 4003;
 };
 
