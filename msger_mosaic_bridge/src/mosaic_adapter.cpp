@@ -43,7 +43,7 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
     this->get_parameter("enable_registration", config_.enable_registration);
     this->get_parameter("enable_vehicle_status", config_.enable_vehicle_status);
     
-    int temp_port;
+    int temp_port = 0;
     this->get_parameter("registration_port_remote", temp_port);
     config_.registration_port_remote = static_cast<unsigned short>(temp_port);
     this->get_parameter("registration_port_local", temp_port);
