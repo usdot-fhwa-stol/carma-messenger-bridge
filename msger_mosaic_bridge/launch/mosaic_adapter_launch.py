@@ -20,18 +20,17 @@ def generate_launch_description():
             name='mosaic_adapter',
             output='screen',
             parameters=[
-                {'role_id': 'msg_veh_1'},
-                {'messenger_ip_address': '127.0.0.1'},
-                {'cdasim_ip_address': '127.0.0.1'},
-                {'host_ip': '127.0.0.1'},
-                {'enable_registration': True},
-                {'enable_vehicle_status': True},
-                {'registration_port_local': 4001},
-                {'vehicle_status_port_local': 4002},
-                {'traffic_event_port_local': 4003},
-                {'registration_port_remote': 6001},
-                {'siren_and_light_status_port_remote': 8001}               
-                
+                {'role_id'                              : 'msg_veh_1'},
+                {'messenger_ip_address'                 : '127.0.0.1'},
+                {'cdasim_ip_address'                    : '127.0.0.1'},
+                {'host_ip'                              : '127.0.0.1'},
+                {'enable_registration'                  : True},
+                {'enable_vehicle_status'                : True},
+                {'registration_port_remote'             : 1716},
+                {'siren_and_light_status_port_remote'   : 1717},
+                {'siren_and_light_status_port_local'    : 1756},      
+                {'vehicle_status_port_local'            : 1757},
+                {'traffic_event_port_local'             : 1758}
             ],
             remappings=[
                 ('vehicle_pose', 'hardware_interface/gps_common_fix'),  # Remap the GPS topic

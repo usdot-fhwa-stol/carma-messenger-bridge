@@ -31,12 +31,13 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
     this->declare_parameter<std::string>("host_ip", "127.0.0.1");
     this->declare_parameter<bool>("enable_registration", true);
     this->declare_parameter<bool>("enable_vehicle_status", true);
-    this->declare_parameter<int>("registration_port_local", 4001);
-    this->declare_parameter<int>("vehicle_status_port_local", 4002);
-    this->declare_parameter<int>("traffic_event_port_local", 4003);
-    this->declare_parameter<int>("registration_port_remote", 6001);
-    this->declare_parameter<int>("siren_and_light_status_port_remote", 8001);
 
+    this->declare_parameter<int>("registration_port_remote", 1716);
+    this->declare_parameter<int>("siren_and_light_status_port_remote", 1717);
+    this->declare_parameter<int>("registration_port_local", 1767);
+    this->declare_parameter<int>("vehicle_status_port_local", 1757);
+    this->declare_parameter<int>("traffic_event_port_local", 1758);
+    
     this->get_parameter("/vehicle_id", config_.vehicle_id);
     this->get_parameter("role_id", config_.role_id);
     this->get_parameter("cdasim_ip_address", config_.cdasim_ip_address);
