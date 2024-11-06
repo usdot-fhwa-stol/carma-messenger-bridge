@@ -98,6 +98,7 @@ private:
     std::unique_ptr<std::thread> io_thread_;
     std::unique_ptr<boost::asio::io_context::work> work_;
     boost::system::error_code conn_manager_error_;
+    std::array<double, 3> prev_pose = {0.0, 0.0, 0.0};
 };
 
 #endif // MOSAIC_CLIENT_HPP
