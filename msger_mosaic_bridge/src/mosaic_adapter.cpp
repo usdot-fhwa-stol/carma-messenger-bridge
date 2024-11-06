@@ -204,8 +204,14 @@ void MosaicAdapter::on_siren_and_light_status_recieved_handler(bool siren_active
 
 void MosaicAdapter::on_traffic_event_received_handler(float up_track, float down_track, float minimum_gap, float advisory_speed)
 {
-    // Check if all parameters are zero
-    if (up_track == 0 && down_track == 0 && minimum_gap == 0 && advisory_speed == 0)
+    // Define a small epsilon for floating-point comparison
+    const float EPSILON = 1e-6;
+
+    // Check if all parameters are close to zero within the epsilon range
+    if (std::abs(up_track) < EPSILON && 
+        std::abs(down_track) < EPSILON && 
+        std::abs(minimum_gap) < EPSILON && 
+        std::abs(advisory_speed) < EPSILON)
     {
         // Create an empty request for the Trigger service
         auto stop_request = std::make_shared<std_srvs::srv::Trigger::Request>();
@@ -250,7 +256,6 @@ void MosaicAdapter::on_traffic_event_received_handler(float up_track, float down
         });
     }
 }
-
 
 std::string MosaicAdapter::compose_handshake_msg(const std::string& role_id, 
                             int veh_status_port, 
