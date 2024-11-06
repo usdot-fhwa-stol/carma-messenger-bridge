@@ -169,10 +169,9 @@ void MosaicClient::received_vehicle_status(const std::shared_ptr<const std::vect
     }
 
     std::array<double, 3> pose = {0.0, 0.0, 0.0};
-    std::array<double, 3> twist = {0.0, 0.0, 0.0};
+    std::array<double, 3> twist = {0.0, 0.0, 0.0}; 
     bool siren_active = false;
     bool light_active = false;
-    double time_difference = 0.1;  // Assuming time difference is 0.1 seconds
 
     if (received_json.HasMember("vehicle_pose") && received_json["vehicle_pose"].IsObject()) {
         const auto& vehicle_pose = received_json["vehicle_pose"];
@@ -183,9 +182,15 @@ void MosaicClient::received_vehicle_status(const std::shared_ptr<const std::vect
             pose[1] = vehicle_pose["y"].GetDouble();
             pose[2] = vehicle_pose["z"].GetDouble();
 
-            // Calculate twist based on pose and prev_pose
-            for (int i = 0; i < 3; ++i) {
-                twist[i] = (pose[i] - prev_pose[i]) / time_difference;
+            // Check if this is the first update
+            if (first_twist_update) {
+                twist = {0.0, 0.0, 0.0}; 
+                first_twist_update = false; 
+            } else {
+                // Calculate twist based on pose and prev_pose
+                for (int i = 0; i < 3; ++i) {
+                    twist[i] = (pose[i] - prev_pose[i]) / time_difference;
+                }
             }
 
             // Update prev_pose to the current pose
@@ -250,7 +255,9 @@ void MosaicClient::received_time(const std::shared_ptr<const std::vector<uint8_t
     }
 
     RCLCPP_DEBUG(rclcpp::get_logger("MosaicClient"), "process_time successfully deserialized unsigned long: %lu", timestep_received);
-
+    if (prev_timestep != 0)
+        time_difference = static_cast<double>(timestep_received - prev_timestep) / 1'000.0;
+    prev_timestep = timestep_received;
     onTimeReceived(timestep_received);
     
 }
