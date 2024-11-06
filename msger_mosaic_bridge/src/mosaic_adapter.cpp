@@ -89,7 +89,9 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
     gps_pub_ = this->create_publisher<gps_msgs::msg::GPSFix>("vehicle_pose", 10);
     twist_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>("velocity", 10);
     time_pub_ = this->create_publisher<rosgraph_msgs::msg::Clock>("/sim_clock", 10);
-    traffic_event_client_ = this->create_client<carma_msgs::srv::SetTrafficEvent>("set_traffic_event");
+    start_broadcasting_traffic_event_client_ = this->create_client<carma_msgs::srv::SetTrafficEvent>("start_broadcasting_traffic_event ");
+    stop_broadcasting_traffic_event_client_ = this->create_client<std_srvs::srv::Trigger>("stop_broadcasting_traffic_event");
+
 
 
     mosaic_client_.onTimeReceived.connect([this](unsigned long timestamp) {this->on_time_received_handler(timestamp); });
@@ -116,6 +118,9 @@ void MosaicAdapter::initialize(){
                                                       config_.registration_port_local, 
                                                       config_.cdasim_ip_address);
     broadcast_handshake_msg(handshake_msg);
+
+    // Call it at initialization since CARMA messenger default setting of broadcasting is 'ON'
+    on_traffic_event_received_handler(0, 0, 0, 0);
 }
 
 void MosaicAdapter::shutdown()
@@ -199,25 +204,57 @@ void MosaicAdapter::on_siren_and_light_status_recieved_handler(bool siren_active
 
 void MosaicAdapter::on_traffic_event_received_handler(float up_track, float down_track, float minimum_gap, float advisory_speed)
 {
-    auto request = std::make_shared<carma_msgs::srv::SetTrafficEvent::Request>();
-    request->up_track = up_track;
-    request->down_track = down_track;
-    request->minimum_gap = minimum_gap;
-    request->advisory_speed = advisory_speed;
+    // Define a small epsilon for floating-point comparison
+    const float EPSILON = 1e-6;
 
-    auto future_result = traffic_event_client_->async_send_request(request, 
-        [this](rclcpp::Client<carma_msgs::srv::SetTrafficEvent>::SharedFuture future) {
-            // Handle the response from the service
-            auto response = future.get();
-            if (response->success)
-            {
-                RCLCPP_INFO(this->get_logger(), "Traffic event set successfully.");
-            }
-            else
-            {
-                RCLCPP_ERROR(this->get_logger(), "Failed to set traffic event.");
-            }
-    });
+    // Check if all parameters are close to zero within the epsilon range
+    if (std::abs(up_track) < EPSILON && 
+        std::abs(down_track) < EPSILON && 
+        std::abs(minimum_gap) < EPSILON && 
+        std::abs(advisory_speed) < EPSILON)
+    {
+        // Create an empty request for the Trigger service
+        auto stop_request = std::make_shared<std_srvs::srv::Trigger::Request>();
+
+        // Call the stop broadcasting service
+        auto future_result = stop_broadcasting_traffic_event_client_->async_send_request(stop_request,
+            [this](rclcpp::Client<std_srvs::srv::Trigger>::SharedFuture future) {
+                // Handle the response from the service
+                auto response = future.get();
+                if (response->success)
+                {
+                    RCLCPP_INFO(this->get_logger(), "Stopped broadcasting traffic event successfully.");
+                }
+                else
+                {
+                    RCLCPP_ERROR(this->get_logger(), "Failed to stop broadcasting traffic event.");
+                }
+        });
+    }
+    else
+    {
+        // Create the request with provided values
+        auto start_request = std::make_shared<carma_msgs::srv::SetTrafficEvent::Request>();
+        start_request->up_track = up_track;
+        start_request->down_track = down_track;
+        start_request->minimum_gap = minimum_gap;
+        start_request->advisory_speed = advisory_speed;
+
+        // Call the start broadcasting service
+        auto future_result = start_broadcasting_traffic_event_client_->async_send_request(start_request, 
+            [this](rclcpp::Client<carma_msgs::srv::SetTrafficEvent>::SharedFuture future) {
+                // Handle the response from the service
+                auto response = future.get();
+                if (response->success)
+                {
+                    RCLCPP_INFO(this->get_logger(), "Traffic event set successfully.");
+                }
+                else
+                {
+                    RCLCPP_ERROR(this->get_logger(), "Failed to set traffic event.");
+                }
+        });
+    }
 }
 
 std::string MosaicAdapter::compose_handshake_msg(const std::string& role_id, 
