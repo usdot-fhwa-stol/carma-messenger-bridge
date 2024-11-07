@@ -169,37 +169,38 @@ void MosaicClient::received_vehicle_status(const std::shared_ptr<const std::vect
     }
 
     std::array<double, 3> pose = {0.0, 0.0, 0.0};
-    std::array<double, 3> twist = {0.0, 0.0, 0.0}; 
+    std::array<double, 3> twist = {0.0, 0.0, 0.0};
     bool siren_active = false;
     bool light_active = false;
 
     if (received_json.HasMember("vehicle_pose") && received_json["vehicle_pose"].IsObject()) {
         const auto& vehicle_pose = received_json["vehicle_pose"];
-        if (vehicle_pose.HasMember("x") && vehicle_pose["x"].IsNumber() &&
-            vehicle_pose.HasMember("y") && vehicle_pose["y"].IsNumber() &&
-            vehicle_pose.HasMember("z") && vehicle_pose["z"].IsNumber()) {
-            pose[0] = vehicle_pose["x"].GetDouble();
-            pose[1] = vehicle_pose["y"].GetDouble();
-            pose[2] = vehicle_pose["z"].GetDouble();
-
-            // Check if this is the first update
-            if (first_twist_update) {
-                twist = {0.0, 0.0, 0.0}; 
-                first_twist_update = false; 
-            } else {
-                // Calculate twist based on pose and prev_pose
-                for (int i = 0; i < 3; ++i) {
-                    twist[i] = (pose[i] - prev_pose[i]) / time_difference;
-                }
-            }
-
-            // Update prev_pose to the current pose
-            prev_pose = pose;
+        if (vehicle_pose.HasMember("lat") && vehicle_pose["lat"].IsNumber() &&
+            vehicle_pose.HasMember("lon") && vehicle_pose["lon"].IsNumber() &&
+            vehicle_pose.HasMember("alt") && vehicle_pose["alt"].IsNumber()) {
+            pose[0] = vehicle_pose["lat"].GetDouble();
+            pose[1] = vehicle_pose["lon"].GetDouble();
+            pose[2] = vehicle_pose["alt"].GetDouble();
         } else {
             RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Invalid or missing fields in 'vehicle_pose'");
         }
     } else {
         RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Missing 'vehicle_pose' in JSON");
+    }
+
+    if (received_json.HasMember("vehicle_twist") && received_json["vehicle_twist"].IsObject()) {
+        const auto& vehicle_twist = received_json["vehicle_twist"];
+        if (vehicle_twist.HasMember("x") && vehicle_twist["x"].IsNumber() &&
+            vehicle_twist.HasMember("y") && vehicle_twist["y"].IsNumber() &&
+            vehicle_twist.HasMember("z") && vehicle_twist["z"].IsNumber()) {
+            twist[0] = vehicle_twist["x"].GetDouble();
+            twist[1] = vehicle_twist["y"].GetDouble();
+            twist[2] = vehicle_twist["z"].GetDouble();
+        } else {
+            RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Invalid or missing fields in 'vehicle_twist'");
+        }
+    } else {
+        RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Missing 'vehicle_twist' in JSON");
     }
 
     if (received_json.HasMember("siren_active") && received_json["siren_active"].IsBool()) {
@@ -219,7 +220,7 @@ void MosaicClient::received_vehicle_status(const std::shared_ptr<const std::vect
                 "Received Vehicle Pose: x=%f, y=%f, z=%f", 
                 pose[0], pose[1], pose[2]);
     RCLCPP_DEBUG(rclcpp::get_logger("MosaicClient"), 
-                "Calculated Vehicle Twist: x=%f, y=%f, z=%f", 
+                "Received Vehicle Twist: x=%f, y=%f, z=%f", 
                 twist[0], twist[1], twist[2]);
     RCLCPP_DEBUG(rclcpp::get_logger("MosaicClient"),
                 "Siren Active: %s, Light Active: %s",
@@ -255,9 +256,6 @@ void MosaicClient::received_time(const std::shared_ptr<const std::vector<uint8_t
     }
 
     RCLCPP_DEBUG(rclcpp::get_logger("MosaicClient"), "process_time successfully deserialized unsigned long: %lu", timestep_received);
-    if (prev_timestep != 0)
-        time_difference = static_cast<double>(timestep_received - prev_timestep) / 1'000.0;
-    prev_timestep = timestep_received;
     onTimeReceived(timestep_received);
     
 }

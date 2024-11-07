@@ -98,10 +98,6 @@ private:
     std::unique_ptr<std::thread> io_thread_;
     std::unique_ptr<boost::asio::io_context::work> work_;
     boost::system::error_code conn_manager_error_;
-    std::array<double, 3> prev_pose = {0.0, 0.0, 0.0};
-    unsigned long prev_timestep = 0;
-    double time_difference = 0.1;
-    bool first_twist_update = true;
 };
 
 #endif // MOSAIC_CLIENT_HPP
