@@ -34,9 +34,9 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
 
     this->declare_parameter<int>("registration_port_remote", 1716);
     this->declare_parameter<int>("siren_and_light_status_port_remote", 1717);
-    this->declare_parameter<int>("registration_port_local", 1767);
     this->declare_parameter<int>("vehicle_status_port_local", 1757);
-    this->declare_parameter<int>("traffic_event_port_local", 1758);
+    this->declare_parameter<int>("registration_port_local", 1767);
+    this->declare_parameter<int>("traffic_event_port_local", 1777);
     
     this->get_parameter("/vehicle_id", config_.vehicle_id);
     this->get_parameter("role_id", config_.role_id);
@@ -89,7 +89,7 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
     gps_pub_ = this->create_publisher<gps_msgs::msg::GPSFix>("vehicle_pose", 10);
     twist_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>("velocity", 10);
     time_pub_ = this->create_publisher<rosgraph_msgs::msg::Clock>("/sim_clock", 10);
-    start_broadcasting_traffic_event_client_ = this->create_client<carma_msgs::srv::SetTrafficEvent>("start_broadcasting_traffic_event ");
+    start_broadcasting_traffic_event_client_ = this->create_client<carma_msgs::srv::SetTrafficEvent>("start_broadcasting_traffic_event");
     stop_broadcasting_traffic_event_client_ = this->create_client<std_srvs::srv::Trigger>("stop_broadcasting_traffic_event");
 
 
