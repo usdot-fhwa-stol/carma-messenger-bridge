@@ -20,7 +20,7 @@ def generate_launch_description():
             name='mosaic_adapter',
             output='screen',
             parameters=[
-                {'role_id'                              : 'msg_veh_1'},
+                {'role_id'                              : 'msger_1'},
                 {'messenger_ip_address'                 : '127.0.0.1'},
                 {'cdasim_ip_address'                    : '127.0.0.1'},
                 {'host_ip'                              : '127.0.0.1'},
@@ -33,9 +33,9 @@ def generate_launch_description():
                 {'traffic_event_port_local'             : 1777}
             ],
             remappings=[
-                ('vehicle_pose', 'hardware_interface/gps_common_fix'),  # Remap the GPS topic
-                ('velocity', 'hardware_interface/velocity')  # Remap the velocity topic
+                ('vehicle_pose', '/hardware_interface/gps_common_fix'),  # Remap the GPS topic
+                ('velocity', '/hardware_interface/velocity')  # Remap the velocity topic
             ],
-            arguments=['--ros-args', '--log-level', 'INFO']  # Setting log level to DEBUG
+            arguments=['--ros-args', '--log-level', 'DEBUG']  # Setting log level to DEBUG
         )
     ])

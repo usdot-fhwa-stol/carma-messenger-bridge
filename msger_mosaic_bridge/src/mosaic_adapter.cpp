@@ -86,8 +86,8 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
         RCLCPP_INFO(this->get_logger(), "MosaicClient initialized successfully.");
     }
 
-    gps_pub_ = this->create_publisher<gps_msgs::msg::GPSFix>("vehicle_pose", 10);
-    twist_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>("velocity", 10);
+    gps_pub_ = this->create_publisher<gps_msgs::msg::GPSFix>("/vehicle_pose", 10);
+    twist_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>("/velocity", 10);
     time_pub_ = this->create_publisher<rosgraph_msgs::msg::Clock>("/sim_clock", 10);
     start_broadcasting_traffic_event_client_ = this->create_client<carma_msgs::srv::SetTrafficEvent>("start_broadcasting_traffic_event");
     stop_broadcasting_traffic_event_client_ = this->create_client<std_srvs::srv::Trigger>("stop_broadcasting_traffic_event");
