@@ -172,7 +172,7 @@ void MosaicClient::received_vehicle_status(const std::shared_ptr<const std::vect
     std::array<double, 3> twist = {0.0, 0.0, 0.0};
     bool siren_active = false;
     bool light_active = false;
-
+    RCLCPP_DEBUG(rclcpp::get_logger("MosaicClient"), "Received JSON: %s", json_string.c_str());
     if (received_json.HasMember("vehicle_pose") && received_json["vehicle_pose"].IsObject()) {
         const auto& vehicle_pose = received_json["vehicle_pose"];
         if (vehicle_pose.HasMember("lat") && vehicle_pose["lat"].IsNumber() &&
