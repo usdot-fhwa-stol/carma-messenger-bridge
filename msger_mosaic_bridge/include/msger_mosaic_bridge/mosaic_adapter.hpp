@@ -30,7 +30,7 @@ class MosaicAdapter : public rclcpp::Node {
 public:
     MosaicAdapter();
     ~MosaicAdapter() { shutdown(); };
-    void initialize();
+    void sendHandshake();
     MosaicClient mosaic_client_;
 private:
 

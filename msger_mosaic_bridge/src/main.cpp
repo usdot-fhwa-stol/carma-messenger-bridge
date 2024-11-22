@@ -21,8 +21,17 @@
 int main(int argc, char** argv) {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<MosaicAdapter>();
-    node->initialize();
-    rclcpp::spin(node);
+
+    rclcpp::Rate rate(10);
+
+    while (rclcpp::ok()) {
+        
+        node->sendHandshake();
+        rclcpp::spin_some(node);
+        rate.sleep();
+    }
+
+    // Clean up and shutdown
     rclcpp::shutdown();
     return 0;
 }

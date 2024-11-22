@@ -32,11 +32,11 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
     this->declare_parameter<bool>("enable_registration", true);
     this->declare_parameter<bool>("enable_vehicle_status", true);
 
-    this->declare_parameter<int>("registration_port_remote", 1716);
-    this->declare_parameter<int>("siren_and_light_status_port_remote", 1717);
-    this->declare_parameter<int>("vehicle_status_port_local", 1757);
-    this->declare_parameter<int>("registration_port_local", 1767);
-    this->declare_parameter<int>("traffic_event_port_local", 1777);
+    this->declare_parameter<int>("registration_port_remote", 3100);
+    this->declare_parameter<int>("siren_and_light_status_port_remote", 3101);
+    this->declare_parameter<int>("vehicle_status_port_local", 3001);
+    this->declare_parameter<int>("registration_port_local", 3000);
+    this->declare_parameter<int>("traffic_event_port_local", 3002);
     
     this->get_parameter("/vehicle_id", config_.vehicle_id);
     this->get_parameter("role_id", config_.role_id);
@@ -109,18 +109,17 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
     });
 
 
+    // Call it at initialization since CARMA messenger default setting of broadcasting is 'ON'
+    on_traffic_event_received_handler(0, 0, 0, 0);
 }
 
-void MosaicAdapter::initialize(){
+void MosaicAdapter::sendHandshake(){
     std::string handshake_msg = compose_handshake_msg(config_.role_id, 
                                                       config_.vehicle_status_port_local,
                                                       config_.traffic_event_port_local,
                                                       config_.registration_port_local, 
                                                       config_.cdasim_ip_address);
     broadcast_handshake_msg(handshake_msg);
-
-    // Call it at initialization since CARMA messenger default setting of broadcasting is 'ON'
-    on_traffic_event_received_handler(0, 0, 0, 0);
 }
 
 void MosaicAdapter::shutdown()
