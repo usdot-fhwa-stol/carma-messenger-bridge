@@ -28,9 +28,9 @@ def generate_launch_description():
                 {'enable_vehicle_status'                : True},
                 {'registration_port_remote'             : 3100},
                 {'siren_and_light_status_port_remote'   : 3101},  
-                {'vehicle_status_port_local'            : 3001},
-                {'registration_port_local'              : 3000},
-                {'traffic_event_port_local'             : 3002}
+                {'registration_port_local'              : 3050},
+                {'vehicle_status_port_local'            : 3051},
+                {'traffic_event_port_local'             : 3052}
             ],
             remappings=[
                 ('vehicle_pose', '/hardware_interface/gps_common_fix'),  # Remap the GPS topic
