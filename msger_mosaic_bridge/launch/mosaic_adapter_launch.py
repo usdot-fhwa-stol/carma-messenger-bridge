@@ -36,6 +36,6 @@ def generate_launch_description():
                 ('vehicle_pose', '/hardware_interface/gps_common_fix'),  # Remap the GPS topic
                 ('velocity', '/hardware_interface/velocity')  # Remap the velocity topic
             ],
-            arguments=['--ros-args', '--log-level', 'DEBUG']  # Setting log level to DEBUG
+            arguments=['--ros-args', '--log-level', 'INFO']  # Setting log level to DEBUG
         )
     ])
