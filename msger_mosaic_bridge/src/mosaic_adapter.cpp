@@ -26,9 +26,9 @@
 MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
 
     this->declare_parameter<std::string>("/vehicle_id", "default_vehicle_id");
-    this->declare_parameter<std::string>("role_id", "msg_veh_1");
+    this->declare_parameter<std::string>("role_id", "msger_1");
     this->declare_parameter<std::string>("cdasim_ip_address", "127.0.0.1");
-    this->declare_parameter<std::string>("host_ip", "127.0.0.1");
+    this->declare_parameter<std::string>("messenger_ip_address", "127.0.0.1");
     this->declare_parameter<bool>("enable_registration", true);
     this->declare_parameter<bool>("enable_vehicle_status", true);
 
@@ -41,6 +41,7 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
     this->get_parameter("/vehicle_id", config_.vehicle_id);
     this->get_parameter("role_id", config_.role_id);
     this->get_parameter("cdasim_ip_address", config_.cdasim_ip_address);
+    this->get_parameter("messenger_ip_address", config_.messenger_ip_address);
     this->get_parameter("enable_registration", config_.enable_registration);
     this->get_parameter("enable_vehicle_status", config_.enable_vehicle_status);
     
