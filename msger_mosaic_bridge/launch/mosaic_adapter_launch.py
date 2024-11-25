@@ -21,6 +21,11 @@ def generate_launch_description():
         default_value='msger_1',
         description='Role ID for the messenger'
     )
+    host_ip_address_arg = DeclareLaunchArgument(
+        'host_ip_address',
+        default_value='127.0.0.1',
+        description='IP address of the Bridge'
+    )
     messenger_ip_address_arg = DeclareLaunchArgument(
         'messenger_ip_address',
         default_value='127.0.0.1',
@@ -80,6 +85,7 @@ def generate_launch_description():
         output='screen',
         parameters=[
             {'role_id': LaunchConfiguration('role_id')},
+            {'host_ip_address': LaunchConfiguration('host_ip_address')},
             {'messenger_ip_address': LaunchConfiguration('messenger_ip_address')},
             {'cdasim_ip_address': LaunchConfiguration('cdasim_ip_address')},
             {'host_ip': LaunchConfiguration('host_ip')},
@@ -101,6 +107,7 @@ def generate_launch_description():
     return LaunchDescription([
         # Add all the declared arguments
         role_id_arg,
+        host_ip_address_arg,
         messenger_ip_address_arg,
         cdasim_ip_address_arg,
         host_ip_arg,

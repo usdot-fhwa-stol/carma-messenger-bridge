@@ -29,6 +29,7 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
     this->declare_parameter<std::string>("role_id", "msger_1");
     this->declare_parameter<std::string>("cdasim_ip_address", "127.0.0.1");
     this->declare_parameter<std::string>("messenger_ip_address", "127.0.0.1");
+    this->declare_parameter<std::string>("host_ip_address", "127.0.0.1");
     this->declare_parameter<bool>("enable_registration", true);
     this->declare_parameter<bool>("enable_vehicle_status", true);
 
@@ -42,6 +43,7 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
     this->get_parameter("role_id", config_.role_id);
     this->get_parameter("cdasim_ip_address", config_.cdasim_ip_address);
     this->get_parameter("messenger_ip_address", config_.messenger_ip_address);
+    this->get_parameter("host_ip_address", config_.host_ip_address);
     this->get_parameter("enable_registration", config_.enable_registration);
     this->get_parameter("enable_vehicle_status", config_.enable_vehicle_status);
     
@@ -62,6 +64,7 @@ MosaicAdapter::MosaicAdapter() : Node("mosaic_adapter"), mosaic_client_() {
     RCLCPP_INFO(this->get_logger(), " - vehicle_id: %s", config_.vehicle_id.c_str());
     RCLCPP_INFO(this->get_logger(), " - role_id: %s", config_.role_id.c_str());
     RCLCPP_INFO(this->get_logger(), " - cdasim_ip_address: %s", config_.cdasim_ip_address.c_str());
+    RCLCPP_INFO(this->get_logger(), " - host_ip_address: %s", config_.host_ip_address.c_str());
     RCLCPP_INFO(this->get_logger(), " - messenger_ip_address: %s", config_.messenger_ip_address.c_str());
     RCLCPP_INFO(this->get_logger(), " - enable_registration: %s", config_.enable_registration ? "true" : "false");
     RCLCPP_INFO(this->get_logger(), " - enable_vehicle_status: %s", config_.enable_vehicle_status ? "true" : "false");
@@ -118,8 +121,8 @@ void MosaicAdapter::sendHandshake(){
     std::string handshake_msg = compose_handshake_msg(config_.role_id, 
                                                       config_.vehicle_status_port_local,
                                                       config_.traffic_event_port_local,
-                                                      config_.registration_port_local, 
-                                                      config_.cdasim_ip_address);
+                                                      config_.registration_port_local,
+                                                      config_.host_ip_address);
     broadcast_handshake_msg(handshake_msg);
 }
 
