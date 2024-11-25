@@ -23,13 +23,14 @@
 #include "conn_manager.hpp"
 
 struct ConnectionConfig {
-    std::string vehicle_id = "msg_veh_1";
-    std::string role_id = "msg_veh_1";
+    std::string vehicle_id = "msger_1";
+    std::string role_id = "msger_1";
     bool enable_registration = true;
     bool enable_vehicle_status = true;
 
     std::string messenger_ip_address = "127.0.0.1";
     std::string cdasim_ip_address = "127.0.0.1"; 
+    std::string host_ip_address = "127.0.0.1";
 
     // port for messenger-mosaic bridge to connect with mosaic (messenger-mosaic bridge -> mosaic)
     unsigned short registration_port_remote = 1716;
