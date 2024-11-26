@@ -28,9 +28,9 @@ struct ConnectionConfig {
     bool enable_registration = true;
     bool enable_vehicle_status = true;
 
-    std::string messenger_ip_address = "127.0.0.1";
-    std::string cdasim_ip_address = "127.0.0.1"; 
-    std::string host_ip_address = "127.0.0.1";
+    std::string messenger_ip_address = "172.7.0.2";
+    std::string cdasim_ip_address = "172.2.0.2"; 
+    std::string host_ip_address = "172.2.0.9";
 
     // port for messenger-mosaic bridge to connect with mosaic (messenger-mosaic bridge -> mosaic)
     unsigned short registration_port_remote = 1716;

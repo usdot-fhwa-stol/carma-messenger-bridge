@@ -23,23 +23,18 @@ def generate_launch_description():
     )
     host_ip_address_arg = DeclareLaunchArgument(
         'host_ip_address',
-        default_value='127.0.0.1',
+        default_value='172.2.0.9',
         description='IP address of the Bridge'
     )
     messenger_ip_address_arg = DeclareLaunchArgument(
         'messenger_ip_address',
-        default_value='127.0.0.1',
+        default_value='172.7.0.2',
         description='IP address of the CARMA Messenger'
     )
     cdasim_ip_address_arg = DeclareLaunchArgument(
         'cdasim_ip_address',
-        default_value='127.0.0.1',
+        default_value='172.2.0.2',
         description='IP address of the CDASim'
-    )
-    host_ip_arg = DeclareLaunchArgument(
-        'host_ip',
-        default_value='127.0.0.1',
-        description='Host IP address'
     )
     enable_registration_arg = DeclareLaunchArgument(
         'enable_registration',
@@ -88,7 +83,6 @@ def generate_launch_description():
             {'host_ip_address': LaunchConfiguration('host_ip_address')},
             {'messenger_ip_address': LaunchConfiguration('messenger_ip_address')},
             {'cdasim_ip_address': LaunchConfiguration('cdasim_ip_address')},
-            {'host_ip': LaunchConfiguration('host_ip')},
             {'enable_registration': LaunchConfiguration('enable_registration')},
             {'enable_vehicle_status': LaunchConfiguration('enable_vehicle_status')},
             {'registration_port_remote': LaunchConfiguration('registration_port_remote')},
@@ -110,7 +104,6 @@ def generate_launch_description():
         host_ip_address_arg,
         messenger_ip_address_arg,
         cdasim_ip_address_arg,
-        host_ip_arg,
         enable_registration_arg,
         enable_vehicle_status_arg,
         registration_port_remote_arg,
