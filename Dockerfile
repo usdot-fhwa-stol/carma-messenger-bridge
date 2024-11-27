@@ -36,4 +36,4 @@ LABEL org.label-schema.vcs-url="https://github.com/usdot-fhwa-stol/carma-messeng
 LABEL org.label-schema.vcs-ref=${VCS_REF}
 LABEL org.label-schema.build-date=${BUILD_DATE}
 
-CMD ["-c", "source /opt/ros/humble/setup.bash && source install/setup.bash && ros2 launch msger_mosaic_bridge mosaic_adapter_launch.py"]
+CMD ["bash", "-c", "source /opt/ros/humble/setup.bash && source install/setup.bash && ros2 launch msger_mosaic_bridge mosaic_adapter_launch.py"]
