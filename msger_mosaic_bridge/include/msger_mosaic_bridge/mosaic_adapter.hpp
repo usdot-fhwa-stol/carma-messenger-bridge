@@ -21,6 +21,8 @@
 #include "rosgraph_msgs/msg/clock.hpp"
 #include "carma_msgs/srv/set_traffic_event.hpp"
 #include <rapidjson/document.h>
+#include "std_srvs/srv/trigger.hpp"
+
 
 // The MosaicAdapter class adapts the MosaicClient for use within a ROS2 environment, facilitating the communication between
 // the ambassador and ROS2 topics by publishing the received network data as ROS2 messages.
@@ -28,7 +30,7 @@ class MosaicAdapter : public rclcpp::Node {
 public:
     MosaicAdapter();
     ~MosaicAdapter() { shutdown(); };
-    void initialize();
+    void sendHandshake();
     MosaicClient mosaic_client_;
 private:
 
@@ -59,7 +61,8 @@ private:
     rclcpp::Publisher<gps_msgs::msg::GPSFix>::SharedPtr gps_pub_;
     rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_pub_;
     rclcpp::Publisher<rosgraph_msgs::msg::Clock>::SharedPtr time_pub_;
-    rclcpp::Client<carma_msgs::srv::SetTrafficEvent>::SharedPtr traffic_event_client_;
+    rclcpp::Client<carma_msgs::srv::SetTrafficEvent>::SharedPtr start_broadcasting_traffic_event_client_;
+    rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr stop_broadcasting_traffic_event_client_;
 
     boost::system::error_code client_error_;
     ConnectionConfig config_;

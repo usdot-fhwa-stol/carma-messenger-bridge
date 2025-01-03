@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.5)
 project(msger_mosaic_bridge)
 
 # Set compile options
@@ -15,6 +15,7 @@ find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(gps_msgs REQUIRED)
 find_package(carma_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 find_package(ament_cmake_gtest REQUIRED) # Add support for Google Test
 
 # Include directories
@@ -37,6 +38,7 @@ ament_target_dependencies(msger_mosaic_bridge_lib
   gps_msgs
   geometry_msgs
   carma_msgs
+  std_srvs
 )
 
 # Declare a C++ executable using the shared library

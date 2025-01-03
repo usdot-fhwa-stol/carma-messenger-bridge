@@ -114,7 +114,7 @@ TEST_F(MosaicAdapterTest, TestClockPublication) {
 
 TEST_F(MosaicAdapterTest, TestMsgerReceiveSirenAndLightStatus) {
     const std::string server_ip = "127.0.0.1";
-    const int server_port = 8001;
+    const int server_port = 3101;
 
     boost::asio::io_context io_context;
     boost::asio::ip::udp::socket socket(io_context, boost::asio::ip::udp::endpoint(boost::asio::ip::make_address(server_ip), server_port));
@@ -213,7 +213,7 @@ TEST_F(MosaicAdapterTest, TestMosaicReceivesHandshakeMessage) {
 
     // Extract the relevant configuration values from the MosaicAdapter
     const std::string server_ip = "127.0.0.1"; 
-    const int server_port = 6001;
+    const int server_port = 3100;
 
     // Create the io_context and a UDP socket bound to the server IP and port
     boost::asio::io_context io_context;
@@ -275,7 +275,7 @@ TEST_F(MosaicAdapterTest, TestMosaicReceivesHandshakeMessage) {
         });
 
     // Call the mosaic adapter initialize after the server is ready
-    mosaic_adapter_node_->initialize();
+    mosaic_adapter_node_->sendHandshake();
 
     // Run the IO context and wait for either the message or the timeout
     while (!message_received && !timeout_occurred) {

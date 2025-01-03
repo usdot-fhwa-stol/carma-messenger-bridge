@@ -58,7 +58,7 @@ bool MosaicClient::initialize(const ConnectionConfig& config, boost::system::err
                                             config.cdasim_ip_address,
                                             0,
                                             config.traffic_event_port_local,
-                                            [this](const std::shared_ptr<const std::vector<uint8_t>>& data) { this->received_vehicle_status(data); }, 
+                                            [this](const std::shared_ptr<const std::vector<uint8_t>>& data) { this->received_traffic_event(data); }, 
                                             ec,
                                             traffic_event_running_);
     if (all_connected)
@@ -129,25 +129,29 @@ void MosaicClient::received_traffic_event(const std::shared_ptr<const std::vecto
         if (received_json.HasMember("up_track") && received_json["up_track"].IsNumber()) {
             up_track = received_json["up_track"].GetDouble();
         } else {
-            RCLCPP_WARN(rclcpp::get_logger("MosaicClient"), "Missing or invalid 'up_track' in JSON");
+            RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Missing or invalid 'up_track' in JSON: %s", json_string.c_str());
+            return;
         }
 
         if (received_json.HasMember("down_track") && received_json["down_track"].IsNumber()) {
             down_track = received_json["down_track"].GetDouble();
         } else {
-            RCLCPP_WARN(rclcpp::get_logger("MosaicClient"), "Missing or invalid 'down_track' in JSON");
+            RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Missing or invalid 'down_track' in JSON: %s", json_string.c_str());
+            return;
         }
 
         if (received_json.HasMember("minimum_gap") && received_json["minimum_gap"].IsNumber()) {
             minimum_gap = received_json["minimum_gap"].GetDouble();
         } else {
-            RCLCPP_WARN(rclcpp::get_logger("MosaicClient"), "Missing or invalid 'minimum_gap' in JSON");
+            RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Missing or invalid 'minimum_gap' in JSON: %s", json_string.c_str());
+            return;
         }
 
         if (received_json.HasMember("advisory_speed") && received_json["advisory_speed"].IsNumber()) {
             advisory_speed = received_json["advisory_speed"].GetDouble();
         } else {
-            RCLCPP_WARN(rclcpp::get_logger("MosaicClient"), "Missing or invalid 'advisory_speed' in JSON");
+            RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Missing or invalid 'advisory_speed' in JSON: %s", json_string.c_str());
+            return;
         }
 
         // Log the extracted information
@@ -172,22 +176,25 @@ void MosaicClient::received_vehicle_status(const std::shared_ptr<const std::vect
     std::array<double, 3> twist = {0.0, 0.0, 0.0};
     bool siren_active = false;
     bool light_active = false;
-
+    RCLCPP_DEBUG(rclcpp::get_logger("MosaicClient"), "Received JSON: %s", json_string.c_str());
     if (received_json.HasMember("vehicle_pose") && received_json["vehicle_pose"].IsObject()) {
         const auto& vehicle_pose = received_json["vehicle_pose"];
-        if (vehicle_pose.HasMember("x") && vehicle_pose["x"].IsNumber() &&
-            vehicle_pose.HasMember("y") && vehicle_pose["y"].IsNumber() &&
-            vehicle_pose.HasMember("z") && vehicle_pose["z"].IsNumber()) {
-            pose[0] = vehicle_pose["x"].GetDouble();
-            pose[1] = vehicle_pose["y"].GetDouble();
-            pose[2] = vehicle_pose["z"].GetDouble();
+        if (vehicle_pose.HasMember("lat") && vehicle_pose["lat"].IsNumber() &&
+            vehicle_pose.HasMember("lon") && vehicle_pose["lon"].IsNumber() &&
+            vehicle_pose.HasMember("alt") && vehicle_pose["alt"].IsNumber()) {
+            pose[0] = vehicle_pose["lat"].GetDouble();
+            pose[1] = vehicle_pose["lon"].GetDouble();
+            pose[2] = vehicle_pose["alt"].GetDouble();
         } else {
-            RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Invalid or missing fields in 'vehicle_pose'");
+            RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Invalid or missing fields in 'vehicle_pose': %s", json_string.c_str());
+            return;
         }
     } else {
-        RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Missing 'vehicle_pose' in JSON");
+        RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Missing 'vehicle_pose' in JSON: %s", json_string.c_str());
+        return;
     }
 
+    onVehPoseReceived(pose);
     if (received_json.HasMember("vehicle_twist") && received_json["vehicle_twist"].IsObject()) {
         const auto& vehicle_twist = received_json["vehicle_twist"];
         if (vehicle_twist.HasMember("x") && vehicle_twist["x"].IsNumber() &&
@@ -197,22 +204,27 @@ void MosaicClient::received_vehicle_status(const std::shared_ptr<const std::vect
             twist[1] = vehicle_twist["y"].GetDouble();
             twist[2] = vehicle_twist["z"].GetDouble();
         } else {
-            RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Invalid or missing fields in 'vehicle_twist'");
+            RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Invalid or missing fields in 'vehicle_twist': %s", json_string.c_str());
+            return;
         }
     } else {
-        RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Missing 'vehicle_twist' in JSON");
+        RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Missing 'vehicle_twist' in JSON: %s", json_string.c_str());
+        return;
     }
+    onVehTwistReceived(twist);
 
     if (received_json.HasMember("siren_active") && received_json["siren_active"].IsBool()) {
         siren_active = received_json["siren_active"].GetBool();
     } else {
-        RCLCPP_WARN(rclcpp::get_logger("MosaicClient"), "Missing 'siren_active' in JSON");
+        RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Missing 'siren_active' in JSON: %s", json_string.c_str());
+        return;
     }
 
     if (received_json.HasMember("light_active") && received_json["light_active"].IsBool()) {
         light_active = received_json["light_active"].GetBool();
     } else {
-        RCLCPP_WARN(rclcpp::get_logger("MosaicClient"), "Missing 'light_active' in JSON");
+        RCLCPP_ERROR(rclcpp::get_logger("MosaicClient"), "Missing 'light_active' in JSON: %s", json_string.c_str());
+        return;
     }
 
     // Log the extracted information
@@ -226,10 +238,9 @@ void MosaicClient::received_vehicle_status(const std::shared_ptr<const std::vect
                 "Siren Active: %s, Light Active: %s",
                 siren_active ? "true" : "false", light_active ? "true" : "false");
 
-    onVehPoseReceived(pose);
-    onVehTwistReceived(twist);
     onSirenAndLightStatuReceived(siren_active, light_active);
 }
+
 
 void MosaicClient::received_time(const std::shared_ptr<const std::vector<uint8_t>>& data) {
     const std::vector<uint8_t> vec = *data;
@@ -255,7 +266,6 @@ void MosaicClient::received_time(const std::shared_ptr<const std::vector<uint8_t
     }
 
     RCLCPP_DEBUG(rclcpp::get_logger("MosaicClient"), "process_time successfully deserialized unsigned long: %lu", timestep_received);
-
     onTimeReceived(timestep_received);
     
 }

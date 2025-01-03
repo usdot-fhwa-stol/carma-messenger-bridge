@@ -23,28 +23,29 @@
 #include "conn_manager.hpp"
 
 struct ConnectionConfig {
-    std::string role_id = "";
-    std::string vehicle_id = "";
+    std::string vehicle_id = "msger_1";
+    std::string role_id = "msger_1";
     bool enable_registration = true;
     bool enable_vehicle_status = true;
 
-    std::string messenger_ip_address = "127.0.0.1";
-    std::string cdasim_ip_address = "127.0.0.1"; 
+    std::string messenger_ip_address = "172.7.0.2";
+    std::string cdasim_ip_address = "172.2.0.2"; 
+    std::string host_ip_address = "172.2.0.9";
 
     // port for messenger-mosaic bridge to connect with mosaic (messenger-mosaic bridge -> mosaic)
-    unsigned short registration_port_remote = 6001;
-    
-    // port for mosaic to connect with messenger-mosaic bridge (mosaic -> messenger-mosaic bridge)
-    unsigned short registration_port_local = 4001;
-
-    // port for mosaic to connect with messenger-mosaic bridge (mosaic -> messenger-mosaic bridge)
-    unsigned short vehicle_status_port_local = 4002;
+    unsigned short registration_port_remote = 1716;
 
     // port for messenger-mosaic bridge to connect with carma-messenger (messenger-mosaic bridge -> carma-messenger)
-    unsigned short siren_and_light_status_port_remote = 8001;
+    unsigned short siren_and_light_status_port_remote = 1717;
+
+    // port for mosaic to connect with messenger-mosaic bridge (mosaic -> messenger-mosaic bridge) to send time sync 
+    unsigned short registration_port_local = 1756;
 
     // port for mosaic to connect with messenger-mosaic bridge (mosaic -> messenger-mosaic bridge)
-    unsigned short traffic_event_port_local = 4003;
+    unsigned short vehicle_status_port_local = 1757;
+
+    // port for mosaic to connect with messenger-mosaic bridge (mosaic -> messenger-mosaic bridge)
+    unsigned short traffic_event_port_local = 1758;
 };
 
 enum SirensAndLightsStatus : uint8_t

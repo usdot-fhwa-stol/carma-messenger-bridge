@@ -119,7 +119,7 @@ bool ConnectionManager::send_message(ConnectionType connectionType, const std::s
             boost::system::error_code ec;
             auto local_endpoint = socket->local_endpoint(ec);
             if (!ec) {
-                RCLCPP_INFO(rclcpp::get_logger("ConnectionManager"),
+                RCLCPP_DEBUG(rclcpp::get_logger("ConnectionManager"),
                             "Sending message from local endpoint %s:%u through socket for connection type: %s, to remote endpoint IP: %s, Port: %u",
                             local_endpoint.address().to_string().c_str(),
                             local_endpoint.port(),

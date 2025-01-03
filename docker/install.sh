@@ -15,7 +15,7 @@
 #  the License.
 
 echo "Sourcing base image for full build..."
-source /opt/ros/humble/setup.bash
+source /opt/ros/foxy/setup.bash
 
 mkdir -p ~/msgs && cd ~/msgs
 git clone --depth 1 --single-branch -b ${GIT_BRANCH} https://github.com/usdot-fhwa-stol/carma-msgs.git
