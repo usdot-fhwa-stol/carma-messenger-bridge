@@ -26,10 +26,10 @@ jobs:
         working-directory: "/opt/carma/"
     runs-on: ubuntu-latest
     container:
-      image: ${{ needs.determine_docker_org_and_tag.outputs.docker_organization }}/carma-base:develop-humble
+      image: ${{ needs.determine_docker_org_and_tag.outputs.docker_organization }}/carma-base:develop
       env:
         INIT_ENV: "/home/carma/.base-image/init-env.sh"
-        ROS_2_ENV: "/opt/ros/humble/setup.bash"
+        ROS_2_ENV: "/opt/ros/foxy/setup.bash"
         TERM: xterm
       options: "--user root"
 
@@ -62,30 +62,26 @@ jobs:
       run: |
         source "$INIT_ENV"
         source "$ROS_2_ENV"
-        colcon build --symlink-install --parallel-workers 4 --packages-select carma_cmake_common
-        colcon build --symlink-install --parallel-workers 4 --packages-select j2735_v2x_msgs j3224_v2x_msgs cav_msgs cav_srvs
-        colcon build --symlink-install --parallel-workers 4 --packages-select carma_msgs carma_utils
-
+        colcon build --packages-select carma_cmake_common 
+        #colcon build --packages-select j2735_v2x_msgs j3224_v2x_msgs cav_msgs cav_srvs
+        colcon build --packages-select carma_msgs 
+        source install/setup.bash
     - name: Build Msger_mosaic_bridge
       run: |
         source "$INIT_ENV"
         source "$ROS_2_ENV"
-        PACKAGES=$(find . -maxdepth 2 -type f -name package.xml | sed 's/\.\///' | cut -d/ -f1)
-        sed -i '/colcon build/ s/$/ --parallel-workers 4 --packages-up-to $PACKAGES/' /home/carma/.ci-image/engineering_tools/code_coverage/make_with_coverage.bash
-        make_with_coverage.bash -m -e /opt/carma/ -o ./coverage_reports/gcov
-
+        colcon build --packages-select msger_mosaic_bridge --cmake-clean-cache
     - name: Run C++ Tests
-      continue-on-error: false
       run: |
         source "$INIT_ENV"
         source "$ROS_2_ENV"
-        sed -i '/colcon test/ s/$/ --parallel-workers 4 --packages-above $PACKAGES/' /home/carma/.ci-image/engineering_tools/code_coverage/make_with_coverage.bash
-        make_with_coverage.bash -t -e /opt/carma/ -o ./coverage_reports/gcov
+        colcon test --packages-select msger_mosaic_bridge --event-handlers console_cohesion+ --parallel-workers 4
+        colcon test-result --all --verbose
+
     - name: Merge compile_commands.json
       run: |
         jq -s 'add' $(find /opt/carma/build -name "compile_commands.json") > /opt/carma/build/combined_compile_commands.json
         cat /opt/carma/build/combined_compile_commands.json
-
     - name: Run SonarScanner
       uses: usdot-fhwa-stol/actions/sonar-scanner@main
       with:
