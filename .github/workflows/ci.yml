@@ -63,21 +63,21 @@ jobs:
         source "$INIT_ENV"
         source "$ROS_2_ENV"
         colcon build --packages-select carma_cmake_common 
-        #colcon build --packages-select j2735_v2x_msgs j3224_v2x_msgs cav_msgs cav_srvs
         colcon build --packages-select carma_msgs 
         source install/setup.bash
+
     - name: Build Msger_mosaic_bridge
       run: |
         source "$INIT_ENV"
         source "$ROS_2_ENV"
-        colcon build --packages-select msger_mosaic_bridge --cmake-clean-cache
+        sed -i '/colcon build/ s/$/ --packages-up-to msger_mosaic_bridge/' /home/carma/.ci-image/engineering_tools/code_coverage/make_with_coverage.bash
+        make_with_coverage.bash -m -e /opt/carma/ -o ./coverage_reports/gcov
     - name: Run C++ Tests
       run: |
         source "$INIT_ENV"
         source "$ROS_2_ENV"
-        colcon test --packages-select msger_mosaic_bridge --event-handlers console_cohesion+ --parallel-workers 4
-        colcon test-result --all --verbose
-
+        sed -i '/colcon test/ s/$/ --packages-above msger_mosaic_bridge/' /home/carma/.ci-image/engineering_tools/code_coverage/make_with_coverage.bash
+        make_with_coverage.bash -t -e /opt/carma/ -o ./coverage_reports/gcov
     - name: Merge compile_commands.json
       run: |
         jq -s 'add' $(find /opt/carma/build -name "compile_commands.json") > /opt/carma/build/combined_compile_commands.json
