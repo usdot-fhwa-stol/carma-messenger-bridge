@@ -1,0 +1,89 @@
+name: CI
+on:
+  push:
+    branches:
+      - develop
+      - master
+      - "release/*"
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  determine_docker_org_and_tag:
+    runs-on: ubuntu-latest
+    outputs:
+      docker_organization: ${{ steps.docker-org-and-tag.outputs.docker_organization }}
+      docker_image_tag: ${{ steps.docker-org-and-tag.outputs.docker_image_tag }}
+    steps:
+      - id: docker-org-and-tag
+        uses: usdot-fhwa-stol/actions/docker-org-and-tag@main
+
+  build:
+    needs: determine_docker_org_and_tag
+    defaults:
+      run:
+        shell: bash
+        working-directory: "/opt/carma/"
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.determine_docker_org_and_tag.outputs.docker_organization }}/carma-base:develop
+      env:
+        INIT_ENV: "/home/carma/.base-image/init-env.sh"
+        ROS_2_ENV: "/opt/ros/foxy/setup.bash"
+        TERM: xterm
+      options: "--user root"
+
+    steps:
+    - name: Checkout ${{ github.event.repository.name }}
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        path: src/${{ github.event.repository.name }}
+
+    - name: Move source code
+      run: mv $GITHUB_WORKSPACE/src /opt/carma/
+
+    - name: Determine base branch
+      id: determine-base-branch
+      run: |
+        if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+          echo git_branch="$GITHUB_BASE_REF" >> $GITHUB_OUTPUT
+        else
+          echo git_branch="$GITHUB_REF_NAME" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Checkout dependencies
+      run: |
+        source "$INIT_ENV"
+        source "$ROS_2_ENV"
+        ./src/${{ github.event.repository.name }}/docker/checkout.bash -r /opt/carma/ -b ${{ steps.determine-base-branch.outputs.git_branch }}
+
+    - name: Build Dependencies
+      run: |
+        source "$INIT_ENV"
+        source "$ROS_2_ENV"
+        colcon build --packages-select carma_cmake_common 
+        colcon build --packages-select carma_msgs 
+        source install/setup.bash
+
+    - name: Build Msger_mosaic_bridge
+      run: |
+        source "$INIT_ENV"
+        source "$ROS_2_ENV"
+        sed -i '/colcon build/ s/$/ --packages-up-to msger_mosaic_bridge/' /home/carma/.ci-image/engineering_tools/code_coverage/make_with_coverage.bash
+        make_with_coverage.bash -m -e /opt/carma/ -o ./coverage_reports/gcov
+    - name: Run C++ Tests
+      run: |
+        source "$INIT_ENV"
+        source "$ROS_2_ENV"
+        sed -i '/colcon test/ s/$/ --packages-above msger_mosaic_bridge/' /home/carma/.ci-image/engineering_tools/code_coverage/make_with_coverage.bash
+        make_with_coverage.bash -t -e /opt/carma/ -o ./coverage_reports/gcov
+    - name: Merge compile_commands.json
+      run: |
+        jq -s 'add' $(find /opt/carma/build -name "compile_commands.json") > /opt/carma/build/combined_compile_commands.json
+        cat /opt/carma/build/combined_compile_commands.json
+    - name: Run SonarScanner
+      uses: usdot-fhwa-stol/actions/sonar-scanner@main
+      with:
+        sonar-token: ${{ secrets.SONAR_TOKEN }}
+        working-dir: "/opt/carma/src/${{ github.event.repository.name }}"
