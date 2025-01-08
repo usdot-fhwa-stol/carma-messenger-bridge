@@ -12,6 +12,8 @@ std::string connectionTypeToString(ConnectionType type) {
             return "TrafficEvent";
         case ConnectionType::Registration:
             return "Registration";
+        case ConnectionType::SirenAndLightStatus:
+            return "SirenAndLightStatus";
         default:
             return "Unknown";
     }
