@@ -2,7 +2,7 @@ name: Docker Hub build
 on:
   push:
     branches:
-      - develop-foxy
+      - develop
       - master
       - "release/*"
     tags:
