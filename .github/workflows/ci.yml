@@ -85,5 +85,5 @@ jobs:
     - name: Run SonarScanner
       uses: usdot-fhwa-stol/actions/sonar-scanner@main
       with:
-        sonar-token: ${{ secrets.SONAR_TOKEN_HUMBLE }}
+        sonar-token: ${{ secrets.SONAR_TOKEN }}
         working-dir: "/opt/carma/src/${{ github.event.repository.name }}"
