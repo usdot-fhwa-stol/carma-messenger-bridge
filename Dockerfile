@@ -15,7 +15,7 @@
 ARG DOCKER_ORG="usdotfhwastol"
 ARG DOCKER_TAG="carma-system-4.9.0"
 FROM usdotfhwastol/carma-base:carma-system-4.5.0
-ENV GIT_BRANCH="master"
+ENV GIT_BRANCH="carma-system-4.5.0"
 USER carma
 WORKDIR /home/carma
 COPY --chown=carma /docker ./docker
