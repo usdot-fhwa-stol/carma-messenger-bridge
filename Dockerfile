@@ -12,10 +12,10 @@
 #  License for the specific language governing permissions and limitations under
 #  the License.
 
-ARG DOCKER_ORG="usdotfhwastol"
-ARG DOCKER_TAG="carma-system-4.9.0"
-FROM usdotfhwastol/carma-base:carma-system-4.5.0
-ENV GIT_BRANCH="carma-system-4.5.0"
+ARG DOCKER_ORG="usdotfhwastoldev"
+ARG DOCKER_TAG="develop"
+FROM ${DOCKER_ORG}/carma-base:${DOCKER_TAG}
+ENV GIT_BRANCH="develop"
 USER carma
 WORKDIR /home/carma
 COPY --chown=carma /docker ./docker
