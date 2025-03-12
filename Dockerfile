@@ -13,7 +13,7 @@
 #  the License.
 
 ARG DOCKER_ORG="usdotfhwastoldev"
-ARG DOCKER_TAG="develop"
+ARG DOCKER_TAG="develop-humble"
 FROM ${DOCKER_ORG}/carma-base:${DOCKER_TAG}
 ENV GIT_BRANCH="develop"
 USER carma
